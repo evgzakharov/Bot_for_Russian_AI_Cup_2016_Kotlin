@@ -38,26 +38,25 @@ class StrategyManager {
     }
 
     private fun laneDecision() {
-        val friendMostKillingLine = MapHelper.mapLines
-                .filter { it.enemy ?: false && it.deadFriendTowerCount > 0 }
-
-                .firstOrNull()
-
-        if (friendMostKillingLine?.deadFriendTowerCount == 2 && friendMostKillingLine?.enemyWizardPositions?.isNotEmpty() ?: false) {
-            laneType = friendMostKillingLine!!.laneType
-        } else {
-            val enemyMostKillingLine = MapHelper.mapLines
-                    .filter { it.enemy ?: false }
-                    .sortedByDescending { it.deadEnemyTowerCount }
-                    .firstOrNull()
-
-
-        }
+//        val friendMostKillingLine = MapHelper.mapLines
+//                .filter { it.enemy ?: false && it.deadFriendTowerCount > 0 }
+//                .firstOrNull()
+//
+//        if (friendMostKillingLine?.deadFriendTowerCount == 2 && friendMostKillingLine?.enemyWizardPositions?.isNotEmpty() ?: false) {
+//            laneType = friendMostKillingLine!!.laneType
+//        } else {
+//            val enemyMostKillingLine = MapHelper.mapLines
+//                    .filter { it.enemy ?: false }
+//                    .sortedByDescending { it.deadEnemyTowerCount }
+//                    .firstOrNull()
+//
+//
+//        }
     }
 
     private fun initializeDefault() {
         if (laneType == null) {
-            when (self!!.id.toInt()) {
+            when (self.id.toInt()) {
                 1, 2, 6, 7 -> laneType = LaneType.TOP
                 3, 8 -> laneType = LaneType.MIDDLE
                 4, 5, 9, 10 -> laneType = LaneType.BOTTOM
@@ -67,9 +66,6 @@ class StrategyManager {
         if (actionMode == null)
             actionMode = ActionMode.ATTACK
 
-        if (gameManagers == null)
-            gameManagers = HashMap<ActionMode, ActionManager>()
-
-        gameManagers!!.put(ActionMode.ATTACK, AttackActionManager())
+        gameManagers.put(ActionMode.ATTACK, AttackActionManager())
     }
 }

@@ -8,7 +8,7 @@ import java.util.Optional
 class AttackActionManager : ActionManager() {
     override fun move(): ActionMode {
         if (self.life < self.maxLife * ActionManager.Companion.LOW_HP_FACTOR) {
-            moveHelper.goTo(mapWayFinder.getPreviousWaypoint(strategyManager.laneType))
+            moveHelper.goTo(mapWayFinder.getPreviousWaypoint(strategyManager.laneType!!))
             return ActionMode.ATTACK
         }
 
@@ -16,13 +16,13 @@ class AttackActionManager : ActionManager() {
 
         var nextWaypoint: Point2D? = null
         if (isNeedToMoveBack) {
-            moveHelper.goWithoutTurn(mapWayFinder.getPreviousWaypoint(strategyManager.laneType))
+            moveHelper.goWithoutTurn(mapWayFinder.getPreviousWaypoint(strategyManager.laneType!!))
 
-            nearestTarget.let { livingUnit -> shootHelder.shootToTarget(livingUnit) }
+            nearestTarget?.let { livingUnit -> shootHelder.shootToTarget(livingUnit) }
 
             return ActionMode.ATTACK
         } else {
-            nextWaypoint = mapWayFinder.getNextWaypoint(strategyManager.laneType)
+            nextWaypoint = mapWayFinder.getNextWaypoint(strategyManager.laneType!!)
             moveHelper.goWithoutTurn(nextWaypoint)
 
             if (nearestTarget != null) {

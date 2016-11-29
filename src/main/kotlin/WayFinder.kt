@@ -71,7 +71,7 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
         if (!newStepPoints.isEmpty()) {
             val point2DS = growMatrix(newStepPoints, findingWayPoint, allUnits)
             if (point2DS.isEmpty()) {
-                if (stepPoints.size == 1 && lastMatrix != null && lastMatrix.matrixPoints!!.size > 0) {
+                if (stepPoints.size == 1 && lastMatrix != null && lastMatrix.matrixPoints!!.isNotEmpty()) {
                     val nearestMatrix = lastMatrix.matrixPoints!!.values
                             .minBy { it.point.getDistanceTo(findingWayPoint) }
 

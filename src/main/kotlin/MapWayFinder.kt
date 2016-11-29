@@ -2,14 +2,10 @@ import model.Game
 import model.LaneType
 import model.Wizard
 import model.World
-
 import java.util.*
-import java.util.stream.Collectors
 
 class MapWayFinder(world: World, game: Game, private val wizard: Wizard) {
 
-    private val world: World? = null
-    private val game: Game? = null
     private val mapHelper: MapHelper
 
     init {

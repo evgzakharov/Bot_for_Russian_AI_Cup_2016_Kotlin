@@ -32,7 +32,7 @@ public abstract class ActionManager {
     }
 
     open fun move(): ActionMode {
-        val nearestTree = findHelper.allTrees
+        val nearestTree = findHelper.getAllTrees()
                 .filter { tree -> abs(self.getAngleTo(tree)) < PI / 2 }
                 .filter { tree -> self.getDistanceTo(tree) < self.radius + tree.radius + MIN_CLOSEST_DISTANCE }
                 .firstOrNull()
