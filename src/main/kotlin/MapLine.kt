@@ -5,13 +5,13 @@ import java.util.ArrayList
 import java.util.HashMap
 
 class MapLine @JvmOverloads constructor(val startPoint: Point2D, val endPoint: Point2D, @Nullable val laneType: LaneType? = null, isEnemy: Boolean? = null) {
-    var enemy: Boolean? = false
+    var enemy: Boolean = false
 
     val lineLength: Double
     val angle: Double
 
-    var friendPosition = -1.0
-    var enemyPosition = -1.0
+    var friendPosition: Double? = null
+    var enemyPosition: Double? = null
 
     val friendWizardPositions: MutableMap<Point2D, Double> = HashMap()
     val enemyWizardPositions: MutableMap<Point2D, Double> = HashMap()
@@ -19,7 +19,6 @@ class MapLine @JvmOverloads constructor(val startPoint: Point2D, val endPoint: P
     var deadFriendTowerCount: Int = 0
     var deadEnemyTowerCount: Int = 0
 
-    var mapLineStatus: MapLineStatus? = null
 
     var startLines: MutableList<MapLine> = ArrayList()
     var endLines: MutableList<MapLine> = ArrayList()
@@ -33,10 +32,8 @@ class MapLine @JvmOverloads constructor(val startPoint: Point2D, val endPoint: P
             this.enemy = isEnemy
             if (isEnemy) {
                 deadEnemyTowerCount = 2
-                mapLineStatus = MapLineStatus.RED
             } else {
                 deadFriendTowerCount = 0
-                mapLineStatus = MapLineStatus.GREEN
             }
         }
 

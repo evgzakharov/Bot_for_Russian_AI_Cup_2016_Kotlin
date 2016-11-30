@@ -66,12 +66,15 @@ class MapWayFinder(world: World, game: Game, private val wizard: Wizard) {
                     .mapNotNull { wizardPosition -> findMapWayPoint(wizardPosition, linePositions, safeWay) }
                     .minBy { it.first }
 
-            if (findWayPoint != null && safeWay)
+            if (findWayPoint == null && safeWay == true)
                 return wizardPositions
                         .mapNotNull { wizardPosition -> findMapWayPoint(wizardPosition, linePositions, false) }
                         .minBy { it.first }?.second!!
 
-            return findWayPoint!!.second
+            if (findWayPoint == null)
+                throw RuntimeException("something goes wrong")
+
+            return findWayPoint.second
         }
     }
 
@@ -224,8 +227,6 @@ class MapWayFinder(world: World, game: Game, private val wizard: Wizard) {
                     val checkedMapLine = linePosition.mapLine
                     if (filteredFurtherLines.contains(checkedMapLine)) {
                         if (!wayParams.isSafeWay) return@filter true
-
-                        if (checkedMapLine.mapLineStatus == MapLineStatus.GREEN) return@filter true
 
                         if (checkedMapLine.startPoint == wayParams.startPoint)
                             return@filter checkedMapLine.enemyWizardPositions.values

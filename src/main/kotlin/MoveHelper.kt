@@ -1,7 +1,4 @@
-import model.Game
-import model.Move
-import model.Wizard
-import model.World
+import model.*
 
 import java.lang.StrictMath.*
 
@@ -9,6 +6,10 @@ class MoveHelper(private val self: Wizard, private val world: World, private val
 
     private var lastFindingPoint: Point2D? = null
     private var lastFoundPoint: Point2D? = null
+
+    fun goTo(unit: LivingUnit) {
+        goTo(unit.toPoint())
+    }
 
     fun goTo(point: Point2D) {
         val correctedPoint = correctPoint(point)

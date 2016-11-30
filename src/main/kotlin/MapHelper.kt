@@ -17,7 +17,6 @@ class MapHelper(world: World, game: Game, var wizard: Wizard) {
         updateTowerInfo()
         updateWizardPositions()
         updateMinionPositions()
-        updateStatuses()
     }
 
     private fun clearLinesInfo() {
@@ -25,32 +24,11 @@ class MapHelper(world: World, game: Game, var wizard: Wizard) {
             mapLine.enemyWizardPositions.clear()
             mapLine.friendWizardPositions.clear()
 
-            if (mapLine.enemy!!) {
+            if (mapLine.enemy)
                 mapLine.enemyPosition = 0.0
-                mapLine.friendPosition = 0.0
-            } else {
-                mapLine.enemyPosition = mapLine.lineLength
-                mapLine.friendPosition = mapLine.lineLength
-            }
 
             mapLine.deadEnemyTowerCount = 0
             mapLine.deadFriendTowerCount = 0
-        }
-    }
-
-    private fun updateStatuses() {
-        mapLines.forEach { line ->
-            if (line.enemyPosition > 0) {
-                line.mapLineStatus = MapLineStatus.YELLOW
-                return@forEach
-            }
-
-            if (line.enemyWizardPositions.isNotEmpty()) {
-                line.mapLineStatus = MapLineStatus.RED
-                return@forEach
-            }
-
-            line.mapLineStatus = MapLineStatus.GREEN
         }
     }
 
@@ -70,11 +48,14 @@ class MapHelper(world: World, game: Game, var wizard: Wizard) {
             val (poinn2D, tower) = value
             val isEnemy = findHelper.isEnemy(wizard.faction, tower)
 
-            val linePosition = getLinePositions(tower, 2.0)
+            val linePosition = getLinePositions(tower, 5.0)
                     .filter { linePosition -> linePosition.mapLine.enemy == isEnemy }
                     .filter { linePosition -> linePosition.mapLine.laneType != null }
-                    .filter { linePosition -> abs(linePosition.mapLine.getAngleTo(tower)) < PI / 3 }
-                    .firstOrNull() ?: throw RuntimeException("invalid tower")
+                    .filter { linePosition -> abs(linePosition.mapLine.getAngleTo(tower)) < PI / 5 }
+                    .minBy { getDistanceFromLine(tower.toPoint(), it.mapLine).first }
+
+            if (linePosition == null)
+                throw RuntimeException("invalid tower")
 
             val towerLine = linePosition.mapLine
 
@@ -82,6 +63,9 @@ class MapHelper(world: World, game: Game, var wizard: Wizard) {
                 towerLine.deadEnemyTowerCount += 1
             else
                 towerLine.deadFriendTowerCount += 1
+
+            if (towerLine.deadFriendTowerCount > 2 || towerLine.deadEnemyTowerCount > 2)
+                throw RuntimeException("omg.. ")
         }
     }
 
@@ -113,10 +97,10 @@ class MapHelper(world: World, game: Game, var wizard: Wizard) {
             linePositions.forEach { linePosition ->
                 val minionLine = linePosition.mapLine
                 if (findHelper.isEnemy(wizard.faction, minion)) {
-                    if (minionLine.enemyPosition > linePosition.position)
+                    if (minionLine.enemyPosition == null || (minionLine.enemyPosition ?: 0.0) < linePosition.position)
                         minionLine.enemyPosition = linePosition.position
                 } else {
-                    if (minionLine.friendPosition < linePosition.position)
+                    if (minionLine.friendPosition == null || (minionLine.friendPosition ?: 0.0) > linePosition.position)
                         minionLine.friendPosition = linePosition.position
                 }
             }
@@ -238,8 +222,11 @@ class MapHelper(world: World, game: Game, var wizard: Wizard) {
 
     companion object {
 
-        val mapLines: MutableList<MapLine> = ArrayList()
-        val mapPoints: MutableList<Point2D> = ArrayList()
+        val mapLines: MutableList<MapLine> = mutableListOf()
+
+        val attackLines: MutableMap<LaneType, List<MapLine>> = mutableMapOf()
+
+        val mapPoints: MutableList<Point2D> = mutableListOf()
 
         var mapSize = 4000.0
 
@@ -293,6 +280,10 @@ class MapHelper(world: World, game: Game, var wizard: Wizard) {
             mapPoints.addAll(Arrays.asList(
                     friendBasePoint, topPoint, middlePoint, bottomPoint, enemyBasePoint
             ))
+
+            attackLines.put(LaneType.TOP, listOf(topFriendLine, topEnemyLine))
+            attackLines.put(LaneType.MIDDLE, listOf(middleFriendLine, middleEnemyLine))
+            attackLines.put(LaneType.BOTTOM, listOf(bottomFriendLine, bottomEnemyLine))
         }
 
         val LINE_RESOLVING_POSITION = 200.0

@@ -7,7 +7,7 @@ import java.util.stream.Collectors
 import java.lang.StrictMath.PI
 import java.lang.StrictMath.abs
 
-public abstract class ActionManager {
+abstract class Action {
 
     protected lateinit var self: Wizard
     protected lateinit var world: World
@@ -31,53 +31,78 @@ public abstract class ActionManager {
         this.strategyManager = strategyManager
     }
 
-    open fun move(): Unit {
+    open fun move(target: Any?): Boolean {
         val nearestTree = findHelper.getAllTrees()
                 .filter { tree -> abs(self.getAngleTo(tree)) < PI / 2 }
                 .filter { tree -> self.getDistanceTo(tree) <= self.radius + tree.radius + MIN_CLOSEST_DISTANCE }
                 .firstOrNull()
 
         nearestTree?.let { tree -> shootHelder.shootToTarget(tree) }
+
+        return true
     }
 
-    abstract val mode: ActionMode
+    open protected fun isNeedToMoveBack(): Boolean {
+        val minionsCondition = minionConditions()
+        if (minionsCondition) return true
 
-    protected fun buldingCondition(): Boolean {
+        val enemyWizards = findHelper.getAllWizards(true, true)
+
+        val multiEnemiesCondition = multiEnemiesCondition(enemyWizards)
+        if (multiEnemiesCondition) return true
+
+        val singleEnemyCondition = singleEnemyCondition(enemyWizards)
+        if (singleEnemyCondition) return true
+
+        val buldingCondition = buldingCondition()
+        if (buldingCondition) return true
+
+        return false
+    }
+
+    open protected fun buldingCondition(): Boolean {
         val nearestBuilding = findHelper.getAllBuldings(true)
                 .minBy { self.getDistanceTo(it) }
 
         var buldingCondition = false
         if (nearestBuilding != null) {
-            var demageRadius = 0.0
-            if (nearestBuilding.type === BuildingType.FACTION_BASE)
-                demageRadius = game.factionBaseAttackRange
-            if (nearestBuilding.type === BuildingType.GUARDIAN_TOWER)
-                demageRadius = game.guardianTowerAttackRange + MIN_CLOSEST_DISTANCE
+            val nearestFriendToBuilding = findHelper.getAllMovingUnits(onlyEnemy = false, onlyNearest = true)
+                    .filter { unit -> unit.life / unit.maxLife < self.life / self.maxLife && !findHelper.isEnemy(self.faction, unit) }
+                    .minBy { nearestBuilding.getDistanceTo(it) }
 
             val distanceToBuilding = self.getDistanceTo(nearestBuilding)
-            if (distanceToBuilding < demageRadius) {
 
-                val nearestFriendToBuilding = findHelper.getAllMovingUnits(true, true)
-                        .filter { unit -> unit.life / unit.maxLife < self.life / self.maxLife }
-                        .minBy { nearestBuilding.getDistanceTo(it) }
+            if (nearestBuilding.type === BuildingType.FACTION_BASE) {
+                var demageRadius = game.guardianTowerAttackRange + MIN_CLOSEST_DISTANCE
 
-                val noFriends = nearestFriendToBuilding
-                        ?.let { livingUnit -> distanceToBuilding < livingUnit.getDistanceTo(nearestBuilding) } ?: true
+                if (distanceToBuilding < demageRadius) {
+                    val noFriends = nearestFriendToBuilding
+                            ?.let { livingUnit -> distanceToBuilding < livingUnit.getDistanceTo(nearestBuilding) } ?: true
 
-                val buldingIsToClose = demageRadius - distanceToBuilding >= game.wizardRadius * 4
+                    val buldingIsToClose = distanceToBuilding <= demageRadius * MIN_DISTANCE_TO_TOWER_FACTOR
 
-                val hgIsLow = self.life < (1 - LOW_HP_FACTOR) * self.maxLife
+                    val hgIsLow = self.life < (1 - LOW_HP_FACTOR) * self.maxLife
 
-                val buldingWillShoot = nearestBuilding.remainingActionCooldownTicks < 100
+                    val buldingWillShoot = nearestBuilding.remainingActionCooldownTicks < 100
 
-                if (noFriends && hgIsLow && buldingWillShoot || buldingIsToClose)
-                    buldingCondition = true
+                    val hgIsVeryLow = self.life < LOW_HP_NEAREST_TOWER_FACTOR * self.maxLife
+
+                    if (noFriends && hgIsLow && buldingWillShoot || buldingIsToClose || hgIsVeryLow)
+                        buldingCondition = true
+                } else {
+                    val buldingIsToClose = distanceToBuilding <= demageRadius * MIN_DISTANCE_TO_TOWER_FACTOR
+
+                    val hgIsLow = self.life < LOW_HP_NEAREST_BASE_FACTOR * self.maxLife
+
+                    if (buldingIsToClose || hgIsLow)
+                        buldingCondition = true
+                }
             }
         }
         return buldingCondition
     }
 
-    protected fun singleEnemyCondition(enemyWizards: List<Wizard>): Boolean {
+    open protected fun singleEnemyCondition(enemyWizards: List<Wizard>): Boolean {
         val enemyWithSmallestHP = enemyWizards
                 .filter { unit -> self.getDistanceTo(unit) < game.wizardCastRange }
                 .minBy { it.life }
@@ -96,7 +121,7 @@ public abstract class ActionManager {
         return singleEnemyCondition
     }
 
-    protected fun multiEnemiesCondition(enemyWizards: List<Wizard>): Boolean {
+    open protected fun multiEnemiesCondition(enemyWizards: List<Wizard>): Boolean {
         val enemiesLookingToMe = enemyWizards
                 .filter { unit ->
                     val distanceTo = self.getDistanceTo(unit)
@@ -116,7 +141,7 @@ public abstract class ActionManager {
         return multiEnemiesCondition
     }
 
-    protected fun minionConditions(): Boolean {
+    open protected fun minionConditions(): Boolean {
         val toCloseMinions = findHelper.getAllMinions(true, true)
                 .filter { minion ->
                     if (minion.type === MinionType.FETISH_BLOWDART)
@@ -137,6 +162,11 @@ public abstract class ActionManager {
         val LOW_HP_FACTOR = 0.25
         val LOW_BUIDING_FACTOR = 0.1
         val LOW_MINION_FACTOR = 0.35
+
+        val LOW_HP_NEAREST_TOWER_FACTOR = 0.4
+        val LOW_HP_NEAREST_BASE_FACTOR = 0.5
+
+        val MIN_DISTANCE_TO_TOWER_FACTOR = 0.7
 
         val MIN_CLOSEST_DISTANCE = 20.0
     }
