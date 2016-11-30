@@ -2,7 +2,7 @@ import model.Bonus
 import model.LivingUnit
 import model.Unit
 
-class Point2D(val x: Double, val y: Double)
+data class Point2D(val x: Double, val y: Double)
 
 fun Point2D.getDistanceTo(x: Double, y: Double): Double {
     return StrictMath.hypot(this.x - x, this.y - y)

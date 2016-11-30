@@ -26,7 +26,12 @@ class KillEnemyAction() : Action() {
 
     override fun isNeedToMoveBack(): Boolean {
         val minionsCondition = minionConditions()
-        if (minionsCondition && self.life < self.maxLife * MIN_HP_FACTOR) return true
+        if (minionsCondition)
+            return true
+
+        val lowHpFactor = self.life < self.maxLife * MIN_HP_FACTOR
+        if (lowHpFactor)
+            return true
 
         val enemyWizards = findHelper.getAllWizards(onlyEnemy = true, onlyNearest = true)
 
@@ -50,6 +55,6 @@ class KillEnemyAction() : Action() {
         const val SPEED_FACTOR: Double = 0.9
         const val STAFF_FACTOR: Double = 2.0
 
-        const val MIN_HP_FACTOR: Double = 0.5
+        const val MIN_HP_FACTOR: Double = 0.35
     }
 }

@@ -4,7 +4,7 @@ import model.LaneType
 import java.util.ArrayList
 import java.util.HashMap
 
-class MapLine @JvmOverloads constructor(val startPoint: Point2D, val endPoint: Point2D, @Nullable val laneType: LaneType? = null, isEnemy: Boolean? = null) {
+data class MapLine @JvmOverloads constructor(val startPoint: Point2D, val endPoint: Point2D, @Nullable val laneType: LaneType? = null, val isEnemy: Boolean? = null) {
     var enemy: Boolean = false
 
     val lineLength: Double

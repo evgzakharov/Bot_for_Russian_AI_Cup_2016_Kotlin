@@ -14,6 +14,7 @@ class StrategyManager {
     lateinit var move: Move
     lateinit var findHelper: FindHelper
     lateinit var moveHelper: MoveHelper
+    lateinit var mapHelper: MapHelper
 
     var actionMode: ActionMode = ActionMode.ATTACK
         private set
@@ -37,6 +38,7 @@ class StrategyManager {
         this.move = move
         this.findHelper = FindHelper(world, game, self)
         this.moveHelper = MoveHelper(self, world, game, move)
+        this.mapHelper = MapHelper(world, game, self)
 
         initializeDefault()
 
@@ -45,6 +47,8 @@ class StrategyManager {
 
     private fun makeDecision() {
         try {
+            checkSkills()
+
             updateBonusInfo()
             actionDecision()
 
@@ -57,8 +61,19 @@ class StrategyManager {
         }
     }
 
+    private fun checkSkills() {
+        if (!game.isSkillsEnabled) return
+
+        val selfSkils = self.getSkills()
+        val skillsToLearn = skillesToLearn
+                .filter { selfSkils.contains(it) }
+                .first()
+
+        move.skillToLearn = skillsToLearn
+    }
+
     private fun updateInfo(laneDecision: Boolean) {
-        if (laneDecision) lastLaneChangeTick = game.tickCount
+        if (laneDecision) lastLaneChangeTick = world.tickIndex
     }
 
     private fun action() {
@@ -90,7 +105,7 @@ class StrategyManager {
         }
 
         val nearestArtifact = world.getBonuses()
-                .filter { self.getDistanceTo(it) < TRY_TO_CATCH_ARTIFACT }
+                .filter { self.getDistanceTo(it) < TRY_TO_CATCH_ARTIFACT_DISTANCE }
                 .sortedByDescending { self.getDistanceTo(it) }
                 .firstOrNull()
 
@@ -103,13 +118,21 @@ class StrategyManager {
         val mayCatchBonus = bonuses
                 .filter { it.value.tickDiff() >= BONUS_UPDATE_TICK }
                 .keys
+                .filter { self.getDistanceTo(it) < TRY_TO_CATCH_ARTIFACT_DISTANCE2 }
                 .sortedByDescending { self.getDistanceTo(it) }
                 .firstOrNull()
 
         if (mayCatchBonus != null) {
-            actionMode = ActionMode.MOVE_TO_POINT
-            movingTarget = mayCatchBonus
-            return
+            val wizardInEnemyLine = mapHelper.getLinePositions(self, 1.0)
+                    .filter { it.mapLine.enemy }
+                    .firstOrNull()
+
+            if (wizardInEnemyLine != null
+                    && wizardInEnemyLine.position < wizardInEnemyLine.mapLine.lineLength * LINE_POSITION_MULTIPLIER) {
+                actionMode = ActionMode.MOVE_TO_POINT
+                movingTarget = mayCatchBonus
+                return
+            }
         }
 
         actionMode = ActionMode.ATTACK
@@ -119,8 +142,8 @@ class StrategyManager {
     private fun updateBonusInfo() {
         world.getWizards().forEach { wizard ->
             bonuses.forEach { bonus ->
-                if (wizard.radius + game.bonusRadius <= wizard.getDistanceTo(bonus.key))
-                    bonus.value.lastCatchTick = game.tickCount
+                if (wizard.radius + game.bonusRadius >= wizard.getDistanceTo(bonus.key))
+                    bonus.value.lastCatchTick = world.tickIndex
             }
         }
     }
@@ -133,15 +156,15 @@ class StrategyManager {
         if (friendMostKillingLine)
             return true
 
-        if (game.tickCount < MIN_CHANGE_TICK_LIMIT)
+        if (world.tickIndex < MIN_CHANGE_TICK_LIMIT)
             return false
 
-        if (game.tickCount - lastLaneChangeTick <= MIN_CHANGE_TICK_LIMIT)
+        if (world.tickIndex - lastLaneChangeTick <= MIN_CHANGE_TICK_LIMIT)
             return false
 
         //or attack on line without wizards
         val lineWithoutFriendWizards = attackLines.mapValues { attackLine ->
-            attackLine.value.fold(0) { sum, value -> sum + value.friendWizardPositions.size}
+            attackLine.value.fold(0) { sum, value -> sum + value.friendWizardPositions.size }
         }.filter { it.value == 0 }.keys.firstOrNull()?.let { true } ?: false
 
         if (lineWithoutFriendWizards)
@@ -185,16 +208,48 @@ class StrategyManager {
         gameManagers.put(ActionMode.MOVE_TO_POINT, MoveToPoint())
     }
 
-    private fun BonusTimeCatch.tickDiff() = abs(game.tickCount - this.lastCatchTick)
+    private fun BonusTimeCatch.tickDiff() = abs(world.tickIndex - this.lastCatchTick)
 
     companion object {
         const val MY_HP_MULTIPLIER: Double = 0.8
         const val TRY_TO_KILL_ENEMY_RADIUS: Double = 500.0
-        const val TRY_TO_CATCH_ARTIFACT: Double = 1200.0
+
+        const val TRY_TO_CATCH_ARTIFACT_DISTANCE: Double = 600.0
+        const val TRY_TO_CATCH_ARTIFACT_DISTANCE2: Double = 1500.0
 
         const val BONUS_UPDATE_TICK: Int = 2500
 
         const val MIN_CHANGE_TICK_LIMIT: Int = 2500
+
+        const val LINE_POSITION_MULTIPLIER: Double = 0.2
+
+        val skillesToLearn: List<SkillType> = listOf(
+                SkillType.STAFF_DAMAGE_BONUS_PASSIVE_1,
+                SkillType.STAFF_DAMAGE_BONUS_PASSIVE_2,
+                SkillType.STAFF_DAMAGE_BONUS_AURA_1,
+                SkillType.STAFF_DAMAGE_BONUS_AURA_2,
+                SkillType.FIREBALL,
+                SkillType.MAGICAL_DAMAGE_BONUS_PASSIVE_1,
+                SkillType.MAGICAL_DAMAGE_BONUS_PASSIVE_2,
+                SkillType.MAGICAL_DAMAGE_BONUS_AURA_1,
+                SkillType.MAGICAL_DAMAGE_BONUS_AURA_2,
+                SkillType.FROST_BOLT,
+                SkillType.MOVEMENT_BONUS_FACTOR_PASSIVE_1,
+                SkillType.MOVEMENT_BONUS_FACTOR_PASSIVE_2,
+                SkillType.MOVEMENT_BONUS_FACTOR_AURA_1,
+                SkillType.MOVEMENT_BONUS_FACTOR_AURA_2,
+                SkillType.MAGICAL_DAMAGE_ABSORPTION_PASSIVE_1,
+                SkillType.MAGICAL_DAMAGE_ABSORPTION_PASSIVE_2,
+                SkillType.MAGICAL_DAMAGE_ABSORPTION_AURA_1,
+                SkillType.MAGICAL_DAMAGE_ABSORPTION_AURA_2,
+                SkillType.RANGE_BONUS_PASSIVE_1,
+                SkillType.RANGE_BONUS_PASSIVE_2,
+                SkillType.RANGE_BONUS_AURA_1,
+                SkillType.RANGE_BONUS_AURA_2,
+                SkillType.SHIELD,
+                SkillType.ADVANCED_MAGIC_MISSILE,
+                SkillType.HASTE
+        )
     }
 }
 
