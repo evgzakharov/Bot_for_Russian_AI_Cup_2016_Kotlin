@@ -6,28 +6,28 @@ import java.util.Optional
 
 
 class AttackActionManager : ActionManager() {
-    override fun move(): ActionMode {
+    override fun move(): Unit {
         if (self.life < self.maxLife * ActionManager.Companion.LOW_HP_FACTOR) {
             moveHelper.goTo(mapWayFinder.getPreviousWaypoint(strategyManager.laneType!!))
-            return ActionMode.ATTACK
+            return
         }
 
         val nearestTarget = findHelper.nearestEnemy
 
-        var nextWaypoint: Point2D? = null
+        val nextWaypoint: Point2D?
         if (isNeedToMoveBack) {
             moveHelper.goWithoutTurn(mapWayFinder.getPreviousWaypoint(strategyManager.laneType!!))
 
             nearestTarget?.let { livingUnit -> shootHelder.shootToTarget(livingUnit) }
 
-            return ActionMode.ATTACK
+            return
         } else {
             nextWaypoint = mapWayFinder.getNextWaypoint(strategyManager.laneType!!)
             moveHelper.goWithoutTurn(nextWaypoint)
 
             if (nearestTarget != null) {
                 shootHelder.shootToTarget(nearestTarget)
-                return ActionMode.ATTACK
+                return
             }
         }
 
@@ -41,8 +41,6 @@ class AttackActionManager : ActionManager() {
         nearestTree?.let { tree -> move.action = ActionType.STAFF }
 
         super.move()
-
-        return ActionMode.ATTACK
     }
 
     private val isNeedToMoveBack: Boolean

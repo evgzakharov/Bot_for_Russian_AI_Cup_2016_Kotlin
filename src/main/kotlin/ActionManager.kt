@@ -31,15 +31,13 @@ public abstract class ActionManager {
         this.strategyManager = strategyManager
     }
 
-    open fun move(): ActionMode {
+    open fun move(): Unit {
         val nearestTree = findHelper.getAllTrees()
                 .filter { tree -> abs(self.getAngleTo(tree)) < PI / 2 }
-                .filter { tree -> self.getDistanceTo(tree) < self.radius + tree.radius + MIN_CLOSEST_DISTANCE }
+                .filter { tree -> self.getDistanceTo(tree) <= self.radius + tree.radius + MIN_CLOSEST_DISTANCE }
                 .firstOrNull()
 
         nearestTree?.let { tree -> shootHelder.shootToTarget(tree) }
-
-        return ActionMode.ATTACK
     }
 
     abstract val mode: ActionMode

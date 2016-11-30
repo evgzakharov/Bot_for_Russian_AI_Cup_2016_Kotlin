@@ -70,12 +70,13 @@ class MapHelper(world: World, game: Game, var wizard: Wizard) {
             val (poinn2D, tower) = value
             val isEnemy = findHelper.isEnemy(wizard.faction, tower)
 
-            val linePositions = getLinePositions(tower, 1.5)
+            val linePosition = getLinePositions(tower, 2.0)
                     .filter { linePosition -> linePosition.mapLine.enemy == isEnemy }
                     .filter { linePosition -> linePosition.mapLine.laneType != null }
-                    .filter { linePosition -> abs(getAngleTo(linePosition.mapLine, tower)) < PI / 6 }
+                    .filter { linePosition -> abs(linePosition.mapLine.getAngleTo(tower)) < PI / 3 }
+                    .firstOrNull() ?: throw RuntimeException("invalid tower")
 
-            val towerLine = linePositions[0].mapLine
+            val towerLine = linePosition.mapLine
 
             if (isEnemy)
                 towerLine.deadEnemyTowerCount += 1
@@ -149,7 +150,7 @@ class MapHelper(world: World, game: Game, var wizard: Wizard) {
                     resultLine
                 }
                 .filter { it.isPresent }
-                .map({ value -> value.get().second })
+                .map { value -> value.get().second }
     }
 
     fun getLinePositions(unit: LivingUnit, radiusMultiplier: Double): List<LinePosition> {
@@ -190,7 +191,7 @@ class MapHelper(world: World, game: Game, var wizard: Wizard) {
     }
 
     private fun getDistanceFromLine(point: Point2D, line: MapLine): Pair<Double, Double> {
-        val angleToPoint = getAngleTo(line, point)
+        val angleToPoint = line.getAngleTo(point)
         val distanceToPoint = point.getDistanceTo(line.startPoint)
 
         val distanceFromLine = abs(sin(angleToPoint) * distanceToPoint)
@@ -199,15 +200,15 @@ class MapHelper(world: World, game: Game, var wizard: Wizard) {
         return Pair(distanceFromLine, linePosition)
     }
 
-    private fun getAngleTo(mapLine: MapLine, point: LivingUnit): Double {
-        return getAngleTo(mapLine, Point2D(point.x, point.y))
+    private fun MapLine.getAngleTo(point: LivingUnit): Double {
+        return this.getAngleTo(Point2D(point.x, point.y))
     }
 
-    private fun getAngleTo(mapLine: MapLine, point: Point2D): Double {
-        val startPoint = mapLine.startPoint
+    private fun MapLine.getAngleTo(point: Point2D): Double {
+        val startPoint = this.startPoint
 
         val absoluteAngleTo = atan2(point.y - startPoint.y, point.x - startPoint.x)
-        var relativeAngleTo = absoluteAngleTo - mapLine.angle
+        var relativeAngleTo = absoluteAngleTo - this.angle
 
         while (relativeAngleTo > PI) {
             relativeAngleTo -= 2.0 * PI

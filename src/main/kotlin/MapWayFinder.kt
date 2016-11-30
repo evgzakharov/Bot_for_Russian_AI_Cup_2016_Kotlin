@@ -52,7 +52,7 @@ class MapWayFinder(world: World, game: Game, private val wizard: Wizard) {
                                 return mapHelper.getPointInLine(linePosition)
 
                             val isSafeWay = wizardLine.enemyWizardPositions.values
-                                    .none { value -> isInRange(value!!, position, linePosition.position) }
+                                    .none { value -> isInRange(value, position, linePosition.position) }
 
                             if (isSafeWay)
                                 return mapHelper.getPointInLine(linePosition)

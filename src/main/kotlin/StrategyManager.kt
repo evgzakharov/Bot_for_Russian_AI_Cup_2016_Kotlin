@@ -1,3 +1,4 @@
+import MapHelper.Companion.mapLines
 import model.*
 
 import java.util.Comparator
@@ -11,7 +12,7 @@ class StrategyManager {
     lateinit var move: Move
 
     var laneType: LaneType? = null
-    var actionMode: ActionMode? = null
+    var actionMode: ActionMode = ActionMode.ATTACK
         private set
 
     private var gameManagers: MutableMap<ActionMode, ActionManager> = mutableMapOf()
@@ -34,24 +35,41 @@ class StrategyManager {
 
         laneDecision()
 
-        actionMode = actionManager.move()
+        actionManager.move()
     }
 
     private fun laneDecision() {
-//        val friendMostKillingLine = MapHelper.mapLines
-//                .filter { it.enemy ?: false && it.deadFriendTowerCount > 0 }
-//                .firstOrNull()
-//
-//        if (friendMostKillingLine?.deadFriendTowerCount == 2 && friendMostKillingLine?.enemyWizardPositions?.isNotEmpty() ?: false) {
-//            laneType = friendMostKillingLine!!.laneType
-//        } else {
-//            val enemyMostKillingLine = MapHelper.mapLines
-//                    .filter { it.enemy ?: false }
-//                    .sortedByDescending { it.deadEnemyTowerCount }
-//                    .firstOrNull()
-//
-//
-//        }
+        //defence
+        val friendMostKillingLine = mapLines.shouldChangeLine(sortByEnemyTowers = false) {
+            it.enemy == false && it.deadFriendTowerCount == 2 && it.enemyWizardPositions.isNotEmpty()
+        }
+        if (friendMostKillingLine) return
+
+        //or attack on line without wizards
+        val enemyLineWithoutWizards = mapLines.shouldChangeLine {
+            it.enemy == true && it.friendPosition > 0 && it.enemyWizardPositions.isEmpty()
+        }
+        if (enemyLineWithoutWizards) return
+
+        //or attack line, there are friend wizards less when enemy wizards
+        val enemyMostKillingLine = mapLines.shouldChangeLine { line ->
+            line.enemy == true && line.friendWizardsOnLine() < line.enemyWizardPositions.size
+        }
+        if (enemyMostKillingLine) return
+    }
+
+    private fun List<MapLine>.shouldChangeLine(sortByEnemyTowers: Boolean = true, criteria: (MapLine) -> Boolean): Boolean {
+        return this.filter { criteria(it) }
+                .sortedByDescending { if (sortByEnemyTowers) it.deadEnemyTowerCount else it.deadFriendTowerCount }
+                .firstOrNull()?.run { this@StrategyManager.laneType = this.laneType; true } ?: false
+    }
+
+
+    private fun MapLine.friendWizardsOnLine(): Int {
+        if (laneType == this.laneType)
+            return this.friendWizardPositions.count() + 1
+        else
+            return this.friendWizardPositions.count()
     }
 
     private fun initializeDefault() {

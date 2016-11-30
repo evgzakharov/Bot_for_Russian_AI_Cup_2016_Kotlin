@@ -90,7 +90,7 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
                 .filter { unit -> abs(unit.x - wizard.x) < game.wizardCastRange }
                 .filter { unit -> isFractionBase(unit) || abs(unit.x - newPoint.x) < MAX_RANGE }
                 .filter { unit -> isFractionBase(unit) || abs(unit.y - newPoint.y) < MAX_RANGE }
-                .any { unit -> newPoint.getDistanceTo(unit) <= getUnitDistance(unit) + wizard.radius + MIN_CLOSEST_RANGE }
+                .none { unit -> newPoint.getDistanceTo(unit) <= getUnitDistance(unit) + wizard.radius + MIN_CLOSEST_RANGE }
     }
 
     private fun getUnitDistance(unit: LivingUnit): Double {
