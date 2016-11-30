@@ -72,10 +72,10 @@ abstract class Action {
 
             val distanceToBuilding = self.getDistanceTo(nearestBuilding)
 
-            if (nearestBuilding.type === BuildingType.FACTION_BASE) {
+            if (nearestBuilding.type === BuildingType.GUARDIAN_TOWER) {
                 var demageRadius = game.guardianTowerAttackRange + MIN_CLOSEST_DISTANCE
 
-                if (distanceToBuilding < demageRadius) {
+                if (distanceToBuilding <= demageRadius) {
                     val noFriends = nearestFriendToBuilding
                             ?.let { livingUnit -> distanceToBuilding < livingUnit.getDistanceTo(nearestBuilding) } ?: true
 

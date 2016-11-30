@@ -39,9 +39,7 @@ class MapHelper(world: World, game: Game, var wizard: Wizard) {
                 .filter { tower -> tower.type == BuildingType.GUARDIAN_TOWER }
                 .filter { tower -> tower.life < tower.maxLife * DEAD_TOWER_HP_FACTOR }
                 .forEach { tower ->
-                    val towerPoint = Point2D(tower.x, tower.y)
-
-                    deadGuardTowers.put(towerPoint, tower)
+                    deadGuardTowers.put(tower.id, tower)
                 }
 
         deadGuardTowers.forEach { value ->
@@ -51,6 +49,7 @@ class MapHelper(world: World, game: Game, var wizard: Wizard) {
             val linePosition = getLinePositions(tower, 5.0)
                     .filter { linePosition -> linePosition.mapLine.enemy == isEnemy }
                     .filter { linePosition -> linePosition.mapLine.laneType != null }
+                    .filter { linePosition -> linePosition.position >= 0 && linePosition.position <= linePosition.mapLine.lineLength }
                     .filter { linePosition -> abs(linePosition.mapLine.getAngleTo(tower)) < PI / 5 }
                     .minBy { getDistanceFromLine(tower.toPoint(), it.mapLine).first }
 
@@ -291,7 +290,7 @@ class MapHelper(world: World, game: Game, var wizard: Wizard) {
 
         val DEAD_TOWER_HP_FACTOR = 0.1
 
-        var deadGuardTowers: MutableMap<Point2D, Building> = HashMap()
+        var deadGuardTowers: MutableMap<Long, Building> = HashMap()
     }
 
 
