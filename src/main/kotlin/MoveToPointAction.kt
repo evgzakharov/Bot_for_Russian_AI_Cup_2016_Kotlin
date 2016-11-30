@@ -1,4 +1,4 @@
-class MoveToPoint : Action() {
+class MoveToPointAction : Action() {
 
     override fun move(target: Any?): Boolean {
         if (target == null || target !is Point2D) return false

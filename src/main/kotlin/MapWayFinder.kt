@@ -1,4 +1,8 @@
-import MapHelper.Companion.friendBasePoint
+import MapHelper.friendBasePoint
+import MapHelper.getLinePointToBaseEnemy
+import MapHelper.getLinePositions
+import MapHelper.getNearestPointInLine
+import MapHelper.getPointInLine
 import model.Game
 import model.LaneType
 import model.Wizard
@@ -7,17 +11,11 @@ import java.util.*
 
 class MapWayFinder(world: World, game: Game, private val wizard: Wizard) {
 
-    private val mapHelper: MapHelper
-
-    init {
-        this.mapHelper = MapHelper(world, game, wizard)
-    }
-
     fun getNextWaypoint(laneType: LaneType): Point2D {
-        val wizardOnLine = mapHelper.getLinePositions(wizard, 1.0)
+        val wizardOnLine = getLinePositions(wizard, 1.0)
                 .filter { linePosition -> linePosition.mapLine.laneType === laneType }
 
-        val linePointToBaseEnemy = mapHelper.getLinePointToBaseEnemy(laneType)
+        val linePointToBaseEnemy = getLinePointToBaseEnemy(laneType)
 
         val pointToMove = getPointTo(linePointToBaseEnemy, wizardOnLine.isNotEmpty(), null)
 
@@ -38,7 +36,14 @@ class MapWayFinder(world: World, game: Game, private val wizard: Wizard) {
     }
 
     fun getPointTo(point: Point2D, safeWay: Boolean, nextWizardPoint: Point2D?): Point2D {
-        val wizardPositions = mapHelper.getLinePositions(nextWizardPoint?.let { it } ?: wizard.toPoint(), 1.0)
+        if (!safeWay)
+            return getSafePointTo(point, safeWay, nextWizardPoint)!!
+
+        return getSafePointTo(point, safeWay, nextWizardPoint)?: getSafePointTo(point, false, nextWizardPoint)!!
+    }
+
+    fun getSafePointTo(point: Point2D, safeWay: Boolean, nextWizardPoint: Point2D?): Point2D? {
+        val wizardPositions = getLinePositions(nextWizardPoint?.let { it } ?: wizard.toPoint(), 1.0)
 
         val pointDistance = point.getDistanceTo(nextWizardPoint?.let { it } ?: wizard.toPoint())
 
@@ -46,54 +51,34 @@ class MapWayFinder(world: World, game: Game, private val wizard: Wizard) {
             return point
 
         if (wizardPositions.isEmpty()) {
-            return mapHelper.getNearestPointInLine(nextWizardPoint?.let { it } ?: wizard.toPoint())
+            return getNearestPointInLine(nextWizardPoint?.let { it } ?: wizard.toPoint())
         } else {
-            val linePositions = mapHelper.getLinePositions(point.x, point.y, 1.0)
+            val linePositions = getLinePositions(point.x, point.y, 1.0)
 
             for ((wizardLine, position) in wizardPositions) {
                 for (linePosition in linePositions) {
                     if (linePositions.isEmpty())
-                        throw RuntimeException("asfd")
+                        throw RuntimeException("how??? how?????")
 
                     if (wizardLine == linePosition.mapLine) {
                         if (safeWay) {
                             if (wizardLine.enemyWizardPositions.isEmpty())
-                                return mapHelper.getPointInLine(linePosition)
+                                return getPointInLine(linePosition)
 
                             val isSafeWay = wizardLine.enemyWizardPositions.values
                                     .none { value -> isInRange(value, position, linePosition.position) }
 
                             if (isSafeWay)
-                                return mapHelper.getPointInLine(linePosition)
+                                return getPointInLine(linePosition)
                         } else
-                            return mapHelper.getPointInLine(linePosition)
+                            return getPointInLine(linePosition)
                     }
                 }
             }
 
-            val findWayPoint = wizardPositions
+            return wizardPositions
                     .mapNotNull { wizardPosition -> findMapWayPoint(wizardPosition, linePositions, safeWay) }
-                    .minBy { it.first }
-
-            if (findWayPoint == null && safeWay == true) {
-                val unsafePoint = wizardPositions
-                        .mapNotNull { wizardPosition -> findMapWayPoint(wizardPosition, linePositions, false) }
-                        .minBy { it.first }?.second
-
-                if (unsafePoint == null) {
-                    val newPoint = wizardPositions
-                            .mapNotNull { wizardPosition -> findMapWayPoint(wizardPosition, linePositions, false) }
-                            .minBy { it.first }?.second
-
-                    throw RuntimeException("error in map wayFinder"+newPoint)
-                } else
-                    return unsafePoint
-            }
-
-            if (findWayPoint == null)
-                throw RuntimeException("something goes wrong")
-
-            return findWayPoint.second
+                    .minBy { it.first }?.second
         }
     }
 
@@ -108,83 +93,25 @@ class MapWayFinder(world: World, game: Game, private val wizard: Wizard) {
     private fun findMapWayPoint(wizardLinePosition: LinePosition, pointLinePositions: List<LinePosition>, safeWay: Boolean): Pair<Double, Point2D>? {
         val wizardMapLine = wizardLinePosition.mapLine
 
-        var startLines = wizardMapLine.startLines
-        var endLines = wizardMapLine.endLines
+        val checkWays = listOf(
+                wizardMapLine.startPoint to wizardLinePosition.position,
+                wizardMapLine.endPoint to (wizardMapLine.lineLength - wizardLinePosition.position)
+        )
 
-        if (safeWay) {
-            val enemyWizardPositions = wizardMapLine.enemyWizardPositions
+        return checkWays.mapNotNull { checkWay ->
+            val wayParam = WayParams(
+                    startMapLine = wizardMapLine,
+                    checkedLines = listOf(wizardMapLine),
+                    isSafeWay = safeWay,
+                    pointLinePositions = pointLinePositions,
+                    startDestination = checkWay.second,
+                    startPoint = checkWay.first
+            )
 
-            if (enemyWizardPositions.isNotEmpty()) {
-                val isStartSafe = enemyWizardPositions.values
-                        .any { enemyWizardsLocation ->
-                            enemyWizardsLocation >= wizardLinePosition.position
-                                    || enemyWizardsLocation < SAFE_WIZARD_DISTANCE
-                        }
-
-                if (!isStartSafe)
-                    startLines = mutableListOf()
-
-                val isEndSafe = enemyWizardPositions.values
-                        .any { enemyWizardsLocation ->
-                            enemyWizardsLocation <= wizardLinePosition.position
-                                    || enemyWizardsLocation > wizardMapLine.lineLength - SAFE_WIZARD_DISTANCE
-                        }
-
-                if (!isEndSafe)
-                    endLines = mutableListOf()
-            }
+            findMapWayPoint(wayParam)
+        }.minBy { it.first }?.let { value ->
+            value.first to getPointFromMapLine(wizardLinePosition, value.second)
         }
-
-        val allLines: List<MapLine> = startLines + endLines
-
-        val searchingLines: List<MapLine> = pointLinePositions.map { it.mapLine }
-
-        var findWays: List<Pair<Double, MapLine>> = allLines
-                .filter { searchingLines.contains(it) }
-                .map { mapLine ->
-                    val pointPosition = pointLinePositions
-                            .filter { linePosition -> linePosition.mapLine == mapLine }
-                            .first()
-
-                    mapLine to pointPosition
-                }
-                .map { mapLine ->
-                    val ifStartLine = startLines.contains(mapLine.first)
-                    var startDistance = wizardLinePosition.position
-                    if (!ifStartLine)
-                        startDistance = wizardMapLine.lineLength - wizardLinePosition.position
-
-                    if (mapLine.first.startPoint == wizardMapLine.startPoint || mapLine.first.startPoint == wizardMapLine.endPoint)
-                        (startDistance + mapLine.second.position) to mapLine.first
-                    else
-                        (startDistance + (mapLine.first.lineLength - mapLine.second.position)) to mapLine.first
-                }
-
-        findWays = if (findWays.isEmpty()) {
-            val startWays = if (startLines.isNotEmpty()) {
-                val startPoint = wizardMapLine.startPoint
-                val startPosition = wizardLinePosition.position
-
-                getWays(pointLinePositions, safeWay, startLines, startPoint, startPosition, wizardMapLine)
-            } else
-                emptyList()
-
-            val endWays = if (endLines.isNotEmpty()) {
-                getWays(
-                        pointLinePositions, safeWay, endLines, wizardMapLine.endPoint,
-                        wizardMapLine.lineLength - wizardLinePosition.position, wizardMapLine)
-            } else
-                emptyList()
-
-            startWays + endWays
-        } else
-            findWays
-
-
-        val findValue = findWays
-                .minBy { it.first }
-
-        return findValue?.let { findValue.first to getPointFromMapLine(wizardLinePosition, findValue.second) }
     }
 
     private fun getPointFromMapLine(wizardLinePosition: LinePosition, line: MapLine): Point2D {
@@ -202,41 +129,15 @@ class MapWayFinder(world: World, game: Game, private val wizard: Wizard) {
             if (line.endPoint == wayPoint)
                 linePosition = line.lineLength - linePosition
 
-            return mapHelper.getPointInLine(LinePosition(line, linePosition))
+            return getPointInLine(LinePosition(line, linePosition))
         }
     }
 
 
-    private fun getWays(
-            pointLinePositions: List<LinePosition>,
-            safeWay: Boolean,
-            startLines: List<MapLine>,
-            startPoint: Point2D,
-            startPosition: Double,
-            wizardLine: MapLine): List<Pair<Double, MapLine>> {
-        return startLines
-                .mapNotNull { mapLine ->
-                    val checkedLines = ArrayList<MapLine>()
-                    checkedLines.add(wizardLine)
-
-                    val wayParams = WayParams(
-                            mapLine,
-                            mapLine,
-                            startPoint,
-                            startPosition,
-                            pointLinePositions,
-                            safeWay,
-                            checkedLines
-                    )
-
-                    findMapWayPoint(wayParams)
-                }
-    }
-
     private fun findMapWayPoint(wayParams: WayParams): Pair<Double, MapLine>? {
         if (wayParams.checkedLines.size > 3) return null
 
-        val mapLine = wayParams.mapLine
+        val mapLine = wayParams.startMapLine
 
         var furtherLines = mapLine.startLines
         if (wayParams.startPoint == mapLine.endPoint)
@@ -257,12 +158,11 @@ class MapWayFinder(world: World, game: Game, private val wizard: Wizard) {
                             return@filter checkedMapLine.enemyWizardPositions.values
                                     .all { position ->
                                         linePosition.position < position
-                                                || position > linePosition.mapLine.lineLength - SAFE_WIZARD_DISTANCE
                                     }
                         else
                             return@filter checkedMapLine.enemyWizardPositions.values
                                     .all { position ->
-                                        linePosition.position > position || position < SAFE_WIZARD_DISTANCE
+                                        linePosition.position > position
                                     }
                     } else
                         false
@@ -275,7 +175,7 @@ class MapWayFinder(world: World, game: Game, private val wizard: Wizard) {
             else
                 newLength += findWay.mapLine.lineLength - findWay.position
 
-            return newLength to wayParams.startMapLine
+            return newLength to (wayParams.mapLine ?: findWay.mapLine)
         } else {
             return filteredFurtherLines
                     .mapNotNull { furtherLine ->
@@ -284,17 +184,17 @@ class MapWayFinder(world: World, game: Game, private val wizard: Wizard) {
                         newWayLines.add(furtherLine)
 
                         var nextPoint = furtherLine.startPoint
-                        if (furtherLine.startPoint != wayParams.mapLine.endPoint)
+                        if (furtherLine.startPoint != wayParams.startMapLine.endPoint)
                             nextPoint = furtherLine.endPoint
 
                         val newWayParams = WayParams(
-                                wayParams.startMapLine,
-                                furtherLine,
-                                nextPoint,
-                                wayParams.startDestination!! + wayParams.mapLine.lineLength,
-                                wayParams.pointLinePositions,
-                                wayParams.isSafeWay,
-                                newWayLines
+                                startMapLine = furtherLine,
+                                startPoint = nextPoint,
+                                startDestination = wayParams.startDestination!! + furtherLine.lineLength,
+                                pointLinePositions = wayParams.pointLinePositions,
+                                mapLine = wayParams.mapLine ?: furtherLine,
+                                isSafeWay = wayParams.isSafeWay,
+                                checkedLines = newWayLines
                         )
 
                         findMapWayPoint(newWayParams)
@@ -308,8 +208,6 @@ class MapWayFinder(world: World, game: Game, private val wizard: Wizard) {
         val WAY_FINDER_DISTANCE = 300.0
 
         val NEXT_LINE_DISTANCE_MULTIPLIER = 1.1
-
-        val SAFE_WIZARD_DISTANCE: Double = 100.0
 
         val POINT_IS_CLOSE: Double = 30.0
     }

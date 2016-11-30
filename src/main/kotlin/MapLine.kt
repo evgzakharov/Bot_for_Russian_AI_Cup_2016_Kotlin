@@ -13,8 +13,8 @@ data class MapLine @JvmOverloads constructor(val startPoint: Point2D, val endPoi
     var friendPosition: Double? = null
     var enemyPosition: Double? = null
 
-    val friendWizardPositions: MutableMap<Point2D, Double> = HashMap()
-    val enemyWizardPositions: MutableMap<Point2D, Double> = HashMap()
+    val friendWizardPositions: MutableMap<Long, Double> = HashMap()
+    val enemyWizardPositions: MutableMap<Long, Double> = HashMap()
 
     var deadFriendTowerCount: Int = 0
     var deadEnemyTowerCount: Int = 0

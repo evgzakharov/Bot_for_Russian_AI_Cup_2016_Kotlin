@@ -1,10 +1,7 @@
 import model.*
 
-import java.util.ArrayList
-import java.util.Collections
-import java.util.Optional
-
 import java.lang.StrictMath.abs
+import java.util.*
 
 class WayFinder(private val wizard: Wizard, private val world: World, private val game: Game) {
     private val findHelper: FindHelper
@@ -20,8 +17,7 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
         val matrixStart = Matrix(Point2D(wizard.x, wizard.y), MatrixPoint(0, 0), null)
         matrixStart.pathCount = 0.0
 
-        val allUnits = findHelper.getAllUnits(true, false, true)
-
+        val allUnits = findHelper.getAllUnits(withTrees =  true, onlyEnemy = false, onlyNearest =  true, withNeutrals = true)
         val findLine = growMatrix(listOf(matrixStart), point, allUnits)
 
         return findLine

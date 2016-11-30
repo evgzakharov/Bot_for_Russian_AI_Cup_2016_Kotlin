@@ -8,15 +8,15 @@ import java.lang.StrictMath.abs
 
 class FindHelper(private val world: World, private val game: Game, private val wizard: Wizard) {
 
-    fun getAllUnits(withTrees: Boolean, onlyEnemy: Boolean, onlyNearest: Boolean): List<LivingUnit> {
-        val cacheKey = listOf(withTrees, onlyEnemy, onlyNearest)
+    fun getAllUnits(withTrees: Boolean, onlyEnemy: Boolean, onlyNearest: Boolean, withNeutrals: Boolean): List<LivingUnit> {
+        val cacheKey = listOf(withTrees, onlyEnemy, onlyNearest, withNeutrals)
         if (allUnitsCache[cacheKey] != null) return allUnitsCache[cacheKey]!!
 
         val units = mutableListOf<LivingUnit>()
 
         units.addAll(getAllWizards(onlyEnemy, onlyNearest))
         units.addAll(getAllBuldings(onlyEnemy))
-        units.addAll(getAllMinions(onlyEnemy, onlyNearest))
+        units.addAll(getAllMinions(onlyEnemy, onlyNearest, withNeutrals))
 
         if (withTrees)
             units.addAll(Arrays.asList(*world.getTrees()))
@@ -54,8 +54,8 @@ class FindHelper(private val world: World, private val game: Game, private val w
         return newUnins
     }
 
-    private fun filterLivingUnits(unit: LivingUnit, onlyEnemy: Boolean, onlyNearest: Boolean): Boolean {
-        return !onlyEnemy || isEnemy(wizard.faction, unit)
+    private fun filterLivingUnits(unit: LivingUnit, onlyEnemy: Boolean, onlyNearest: Boolean, withNeutrals: Boolean = false): Boolean {
+        return !onlyEnemy || isEnemy(wizard.faction, unit) || (unit.faction == Faction.NEUTRAL && withNeutrals)
                 && (!onlyNearest || abs(unit.x - wizard.x) < game.wizardCastRange * 3)
                 && (!onlyNearest || abs(unit.y - wizard.y) < game.wizardCastRange * 3)
     }
@@ -73,13 +73,13 @@ class FindHelper(private val world: World, private val game: Game, private val w
         return newUnits
     }
 
-    fun getAllMinions(onlyEnemy: Boolean, onlyNearest: Boolean): List<Minion> {
+    fun getAllMinions(onlyEnemy: Boolean, onlyNearest: Boolean, withNeutrals: Boolean = false): List<Minion> {
         val cacheKey = Arrays.asList(onlyEnemy, onlyNearest)
 
         if (allMinions[cacheKey] != null) return allMinions[cacheKey]!!
 
         val newUnits = world.getMinions()
-                .filter { filterLivingUnits(it, onlyEnemy, onlyNearest) }
+                .filter { filterLivingUnits(it, onlyEnemy, onlyNearest, withNeutrals) }
 
         allMinions.put(cacheKey, newUnits)
 

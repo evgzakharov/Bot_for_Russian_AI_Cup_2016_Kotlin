@@ -162,8 +162,6 @@ abstract class Action {
     companion object {
 
         val LOW_HP_FACTOR = 0.25
-        val LOW_BUIDING_FACTOR = 0.1
-        val LOW_MINION_FACTOR = 0.35
 
         val LOW_HP_NEAREST_TOWER_FACTOR = 0.4
         val LOW_HP_NEAREST_BASE_FACTOR = 0.5

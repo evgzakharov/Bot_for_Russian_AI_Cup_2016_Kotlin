@@ -1,6 +1,6 @@
-import MapHelper.Companion.attackLines
-import MapHelper.Companion.friendBasePoint
-import MapHelper.Companion.mapLines
+import MapHelper.attackLines
+import MapHelper.friendBasePoint
+import MapHelper.mapLines
 import model.*
 import java.lang.StrictMath.abs
 
@@ -14,7 +14,6 @@ class StrategyManager {
     lateinit var move: Move
     lateinit var findHelper: FindHelper
     lateinit var moveHelper: MoveHelper
-    lateinit var mapHelper: MapHelper
 
     var actionMode: ActionMode = ActionMode.ATTACK
         private set
@@ -38,7 +37,7 @@ class StrategyManager {
         this.move = move
         this.findHelper = FindHelper(world, game, self)
         this.moveHelper = MoveHelper(self, world, game, move)
-        this.mapHelper = MapHelper(world, game, self)
+        MapHelper.nextTick(world, game, self)
 
         initializeDefault()
 
@@ -64,9 +63,10 @@ class StrategyManager {
     private fun checkSkills() {
         if (!game.isSkillsEnabled) return
 
-        val selfSkils = self.getSkills()
+        val selfSkils = self.getSkills().toList()
+
         val skillsToLearn = skillesToLearn
-                .filter { selfSkils.contains(it) }
+                .filter { selfSkils.isEmpty() || !selfSkils.contains(it) }
                 .first()
 
         move.skillToLearn = skillsToLearn
@@ -123,12 +123,11 @@ class StrategyManager {
                 .firstOrNull()
 
         if (mayCatchBonus != null) {
-            val wizardInEnemyLine = mapHelper.getLinePositions(self, 1.0)
+            val wizardInEnemyLine = MapHelper.getLinePositions(self, 1.0)
                     .filter { it.mapLine.enemy }
                     .firstOrNull()
 
-            if (wizardInEnemyLine != null
-                    && wizardInEnemyLine.position < wizardInEnemyLine.mapLine.lineLength * LINE_POSITION_MULTIPLIER) {
+            if (wizardInEnemyLine == null || (wizardInEnemyLine.position < wizardInEnemyLine.mapLine.lineLength * LINE_POSITION_MULTIPLIER)) {
                 actionMode = ActionMode.MOVE_TO_POINT
                 movingTarget = mayCatchBonus
                 return
@@ -163,21 +162,29 @@ class StrategyManager {
             return false
 
         //or attack on line without wizards
-        val lineWithoutFriendWizards = attackLines.mapValues { attackLine ->
-            attackLine.value.fold(0) { sum, value -> sum + value.friendWizardPositions.size }
-        }.filter { it.value == 0 }.keys.firstOrNull()?.let { true } ?: false
+        val lineWithoutFriendWizards = attackLines
+                .mapValues { attackLine -> attackLine.value.friendWizards() }
+                .filter { it.value.isEmpty() }.keys
+                .firstOrNull()
+                ?.let { true } ?: false
 
         if (lineWithoutFriendWizards)
             return true
 
         //or attack line, there are friend wizards less when enemy wizards
         val enemyMostKillingLine = mapLines.shouldChangeLine { line ->
-            line.enemy == true && line.friendWizardsOnLine() < line.enemyWizardPositions.size && line.deadEnemyTowerCount > 0
+            line.enemy == true
+                    && attackLines[laneType]!!.friendWizards().size < line.enemyWizardPositions.size
+                    && line.deadEnemyTowerCount > 0
         }
         if (enemyMostKillingLine)
             return true
 
         return false
+    }
+
+    private fun AttackLine.friendWizards(): Set<Long> {
+        return this.friend.friendWizardPositions.keys + this.enemy.friendWizardPositions.keys
     }
 
     private fun List<MapLine>.shouldChangeLine(sortByEnemyTowers: Boolean = true, criteria: (MapLine) -> Boolean): Boolean {
@@ -205,7 +212,7 @@ class StrategyManager {
 
         gameManagers.put(ActionMode.ATTACK, AttackAction())
         gameManagers.put(ActionMode.KILL_ENEMY, KillEnemyAction())
-        gameManagers.put(ActionMode.MOVE_TO_POINT, MoveToPoint())
+        gameManagers.put(ActionMode.MOVE_TO_POINT, MoveToPointAction())
     }
 
     private fun BonusTimeCatch.tickDiff() = abs(world.tickIndex - this.lastCatchTick)
@@ -214,7 +221,7 @@ class StrategyManager {
         const val MY_HP_MULTIPLIER: Double = 0.8
         const val TRY_TO_KILL_ENEMY_RADIUS: Double = 500.0
 
-        const val TRY_TO_CATCH_ARTIFACT_DISTANCE: Double = 600.0
+        const val TRY_TO_CATCH_ARTIFACT_DISTANCE: Double = 700.0
         const val TRY_TO_CATCH_ARTIFACT_DISTANCE2: Double = 1500.0
 
         const val BONUS_UPDATE_TICK: Int = 2500
@@ -224,29 +231,29 @@ class StrategyManager {
         const val LINE_POSITION_MULTIPLIER: Double = 0.2
 
         val skillesToLearn: List<SkillType> = listOf(
-                SkillType.STAFF_DAMAGE_BONUS_PASSIVE_1,
-                SkillType.STAFF_DAMAGE_BONUS_PASSIVE_2,
-                SkillType.STAFF_DAMAGE_BONUS_AURA_1,
-                SkillType.STAFF_DAMAGE_BONUS_AURA_2,
-                SkillType.FIREBALL,
                 SkillType.MAGICAL_DAMAGE_BONUS_PASSIVE_1,
-                SkillType.MAGICAL_DAMAGE_BONUS_PASSIVE_2,
                 SkillType.MAGICAL_DAMAGE_BONUS_AURA_1,
+                SkillType.MAGICAL_DAMAGE_BONUS_PASSIVE_2,
                 SkillType.MAGICAL_DAMAGE_BONUS_AURA_2,
                 SkillType.FROST_BOLT,
+                SkillType.STAFF_DAMAGE_BONUS_PASSIVE_1,
+                SkillType.STAFF_DAMAGE_BONUS_AURA_1,
+                SkillType.STAFF_DAMAGE_BONUS_PASSIVE_2,
+                SkillType.STAFF_DAMAGE_BONUS_AURA_2,
+                SkillType.FIREBALL,
                 SkillType.MOVEMENT_BONUS_FACTOR_PASSIVE_1,
-                SkillType.MOVEMENT_BONUS_FACTOR_PASSIVE_2,
                 SkillType.MOVEMENT_BONUS_FACTOR_AURA_1,
+                SkillType.MOVEMENT_BONUS_FACTOR_PASSIVE_2,
                 SkillType.MOVEMENT_BONUS_FACTOR_AURA_2,
                 SkillType.MAGICAL_DAMAGE_ABSORPTION_PASSIVE_1,
-                SkillType.MAGICAL_DAMAGE_ABSORPTION_PASSIVE_2,
                 SkillType.MAGICAL_DAMAGE_ABSORPTION_AURA_1,
+                SkillType.MAGICAL_DAMAGE_ABSORPTION_PASSIVE_2,
                 SkillType.MAGICAL_DAMAGE_ABSORPTION_AURA_2,
-                SkillType.RANGE_BONUS_PASSIVE_1,
-                SkillType.RANGE_BONUS_PASSIVE_2,
-                SkillType.RANGE_BONUS_AURA_1,
-                SkillType.RANGE_BONUS_AURA_2,
                 SkillType.SHIELD,
+                SkillType.RANGE_BONUS_PASSIVE_1,
+                SkillType.RANGE_BONUS_AURA_1,
+                SkillType.RANGE_BONUS_PASSIVE_2,
+                SkillType.RANGE_BONUS_AURA_2,
                 SkillType.ADVANCED_MAGIC_MISSILE,
                 SkillType.HASTE
         )

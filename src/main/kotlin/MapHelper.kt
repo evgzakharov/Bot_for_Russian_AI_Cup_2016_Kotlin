@@ -2,10 +2,18 @@ import model.*
 import java.lang.StrictMath.*
 import java.util.*
 
-class MapHelper(world: World, game: Game, var wizard: Wizard) {
-    var findHelper: FindHelper
+data class AttackLine(val friend: MapLine, val enemy: MapLine)
 
-    init {
+object MapHelper {
+    lateinit var world: World
+    lateinit var game: Game
+    lateinit var wizard: Wizard
+    lateinit var findHelper: FindHelper
+
+    fun nextTick(world: World, game: Game, wizard: Wizard) {
+        this.game = game
+        this.world = world
+        this.wizard = wizard
         this.findHelper = FindHelper(world, game, wizard)
 
         updateLineInfo()
@@ -24,8 +32,13 @@ class MapHelper(world: World, game: Game, var wizard: Wizard) {
             mapLine.enemyWizardPositions.clear()
             mapLine.friendWizardPositions.clear()
 
-            if (mapLine.enemy)
-                mapLine.enemyPosition = 0.0
+            if (mapLine.enemy) {
+                mapLine.enemyPosition = mapLine.lineLength
+                mapLine.friendPosition = null
+            } else {
+                mapLine.enemyPosition = null
+                mapLine.friendPosition = 0.0
+            }
 
             mapLine.deadEnemyTowerCount = 0
             mapLine.deadFriendTowerCount = 0
@@ -69,19 +82,19 @@ class MapHelper(world: World, game: Game, var wizard: Wizard) {
     }
 
     private fun updateWizardPositions() {
-        val allWizards = findHelper.getAllWizards(false, false)
+        val allWizards = findHelper.getAllWizards(false, false) + wizard
 
         allWizards.forEach { someWizard ->
             val linePositions = getLinePositions(someWizard, 1.0)
 
             linePositions.forEach { linePosition ->
                 val wizardLine = linePosition.mapLine
-                val wizardPoint = Point2D(someWizard.x, someWizard.y)
+                val wizardId = someWizard.id
 
                 if (findHelper.isEnemy(wizard.faction, someWizard))
-                    wizardLine.enemyWizardPositions.put(wizardPoint, linePosition.position)
+                    wizardLine.enemyWizardPositions.put(wizardId, linePosition.position)
                 else
-                    wizardLine.friendWizardPositions.put(wizardPoint, linePosition.position)
+                    wizardLine.friendWizardPositions.put(wizardId, linePosition.position)
             }
         }
     }
@@ -91,15 +104,15 @@ class MapHelper(world: World, game: Game, var wizard: Wizard) {
         val allMinions = findHelper.getAllMinions(false, false)
 
         allMinions.forEach { minion ->
-            val linePositions = getLinePositions(minion, 1.0)
+            val linePositions = getLinePositions(minion, 2.0)
 
             linePositions.forEach { linePosition ->
                 val minionLine = linePosition.mapLine
                 if (findHelper.isEnemy(wizard.faction, minion)) {
-                    if (minionLine.enemyPosition == null || (minionLine.enemyPosition ?: 0.0) < linePosition.position)
+                    if (minionLine.enemyPosition == null || (minionLine.enemyPosition ?: minionLine.lineLength) < linePosition.position)
                         minionLine.enemyPosition = linePosition.position
                 } else {
-                    if (minionLine.friendPosition == null || (minionLine.friendPosition ?: 0.0) > linePosition.position)
+                    if (minionLine.friendPosition == null || (minionLine.friendPosition ?: 0.0) < linePosition.position)
                         minionLine.friendPosition = linePosition.position
                 }
             }
@@ -108,8 +121,13 @@ class MapHelper(world: World, game: Game, var wizard: Wizard) {
 
     private fun clearMinionPosition() {
         mapLines.forEach { mapLine ->
-            mapLine.enemyPosition = 0.0
-            mapLine.enemyPosition = 0.0
+            if (mapLine.enemy) {
+                mapLine.enemyPosition = mapLine.lineLength
+                mapLine.friendPosition = null
+            } else {
+                mapLine.enemyPosition = null
+                mapLine.friendPosition = 0.0
+            }
         }
     }
 
@@ -205,93 +223,89 @@ class MapHelper(world: World, game: Game, var wizard: Wizard) {
     }
 
     fun getLinePointToBaseEnemy(laneType: LaneType): Point2D {
-        val enemyLine = mapLines
-                .filter { mapLine -> mapLine.laneType === laneType }
-                .filter { mapLine -> mapLine.endPoint == enemyBasePoint }
-                .first()
+        val lane = attackLines[laneType]!!
 
-        val isInLine = getLinePositions(wizard, 1.0)
-                .any { linePosition -> linePosition.mapLine == enemyLine }
-
-        if (isInLine)
-            return enemyLine.endPoint
-        else
-            return enemyLine.startPoint
-    }
-
-    companion object {
-
-        val mapLines: MutableList<MapLine> = mutableListOf()
-
-        val attackLines: MutableMap<LaneType, List<MapLine>> = mutableMapOf()
-
-        val mapPoints: MutableList<Point2D> = mutableListOf()
-
-        var mapSize = 4000.0
-
-        val friendBasePoint = Point2D(100.0, mapSize - 100.0)
-        var topPoint = Point2D(300.0, 300.0)
-        var middlePoint = Point2D(1659.0, 1887.0)
-        var bottomPoint = Point2D(mapSize - 100.0, mapSize - 100.0)
-        var enemyBasePoint = Point2D(mapSize - 100.0, 100.0)
-
-        var topFriendLine = MapLine(friendBasePoint, topPoint, LaneType.TOP, false)
-        var topEnemyLine = MapLine(topPoint, enemyBasePoint, LaneType.TOP, true)
-
-        var middleFriendLine = MapLine(friendBasePoint, middlePoint, LaneType.MIDDLE, false)
-        var middleEnemyLine = MapLine(middlePoint, enemyBasePoint, LaneType.MIDDLE, true)
-
-        var bottomFriendLine = MapLine(friendBasePoint, bottomPoint, LaneType.BOTTOM, false)
-        var bottomEnemyLine = MapLine(bottomPoint, enemyBasePoint, LaneType.BOTTOM, true)
-
-        var artifactTopLine = MapLine(topPoint, middlePoint, null)
-        var artifactBottomLine = MapLine(middlePoint, bottomPoint, null)
-
-        init {
-            topFriendLine.startLines.addAll(Arrays.asList(middleFriendLine, bottomFriendLine))
-            topFriendLine.endLines.addAll(Arrays.asList(topEnemyLine, artifactTopLine))
-
-            topEnemyLine.startLines.addAll(Arrays.asList(topFriendLine, artifactTopLine))
-            topEnemyLine.endLines.addAll(Arrays.asList(middleEnemyLine, bottomEnemyLine))
-
-            middleFriendLine.startLines.addAll(Arrays.asList(topFriendLine, bottomFriendLine))
-            middleFriendLine.endLines.addAll(Arrays.asList(topEnemyLine, artifactBottomLine, artifactTopLine))
-
-            middleEnemyLine.startLines.addAll(Arrays.asList(topFriendLine, artifactBottomLine, artifactTopLine))
-            middleEnemyLine.endLines.addAll(Arrays.asList(topEnemyLine, bottomEnemyLine))
-
-            bottomFriendLine.startLines.addAll(Arrays.asList(topFriendLine, middleFriendLine))
-            bottomFriendLine.endLines.addAll(Arrays.asList(artifactBottomLine, bottomEnemyLine))
-
-            bottomEnemyLine.startLines.addAll(Arrays.asList(artifactBottomLine, bottomFriendLine))
-            bottomEnemyLine.endLines.addAll(Arrays.asList(topEnemyLine, middleEnemyLine))
-
-            artifactTopLine.startLines.addAll(Arrays.asList(topFriendLine, topEnemyLine))
-            artifactTopLine.endLines.addAll(Arrays.asList(middleFriendLine, middleEnemyLine, artifactBottomLine))
-
-            artifactBottomLine.startLines.addAll(Arrays.asList(middleFriendLine, middleEnemyLine, artifactTopLine))
-            artifactBottomLine.endLines.addAll(Arrays.asList(bottomFriendLine, bottomEnemyLine))
-
-            mapLines.addAll(Arrays.asList(
-                    topFriendLine, topEnemyLine, middleFriendLine, middleEnemyLine, bottomFriendLine, bottomEnemyLine, artifactTopLine, artifactBottomLine
-            ))
-
-            mapPoints.addAll(Arrays.asList(
-                    friendBasePoint, topPoint, middlePoint, bottomPoint, enemyBasePoint
-            ))
-
-            attackLines.put(LaneType.TOP, listOf(topFriendLine, topEnemyLine))
-            attackLines.put(LaneType.MIDDLE, listOf(middleFriendLine, middleEnemyLine))
-            attackLines.put(LaneType.BOTTOM, listOf(bottomFriendLine, bottomEnemyLine))
+        if (lane.enemy.friendPosition != null)
+            return getPointInLine(lane.enemy, lane.enemy.friendPosition!!)
+        else if (lane.friend.friendPosition == null || lane.friend.friendPosition == 0.0)
+            return getPointInLine(lane.friend, lane.friend.lineLength)
+        else {
+            return getPointInLine(lane.friend, max(max(lane.friend.friendPosition ?: 0.0,
+                    lane.friend.enemyPosition ?: 0.0), START_POINT_POSITON))
         }
-
-        val LINE_RESOLVING_POSITION = 200.0
-        val LINE_RESOLVING_DISTANCE = 200.0
-
-        val DEAD_TOWER_HP_FACTOR = 0.1
-
-        var deadGuardTowers: MutableMap<Long, Building> = HashMap()
     }
 
 
+    val mapLines: MutableList<MapLine> = mutableListOf()
+
+    val attackLines: MutableMap<LaneType, AttackLine> = mutableMapOf()
+
+    val mapPoints: MutableList<Point2D> = mutableListOf()
+
+    var mapSize = 4000.0
+
+    val friendBasePoint = Point2D(100.0, mapSize - 100.0)
+    var topPoint = Point2D(300.0, 300.0)
+    var middlePoint = Point2D(1659.0, 1887.0)
+    var bottomPoint = Point2D(mapSize - 100.0, mapSize - 100.0)
+    var enemyBasePoint = Point2D(mapSize - 100.0, 100.0)
+
+    var topFriendLine = MapLine(friendBasePoint, topPoint, LaneType.TOP, false)
+    var topEnemyLine = MapLine(topPoint, enemyBasePoint, LaneType.TOP, true)
+
+    var middleFriendLine = MapLine(friendBasePoint, middlePoint, LaneType.MIDDLE, false)
+    var middleEnemyLine = MapLine(middlePoint, enemyBasePoint, LaneType.MIDDLE, true)
+
+    var bottomFriendLine = MapLine(friendBasePoint, bottomPoint, LaneType.BOTTOM, false)
+    var bottomEnemyLine = MapLine(bottomPoint, enemyBasePoint, LaneType.BOTTOM, true)
+
+    var artifactTopLine = MapLine(topPoint, middlePoint, null)
+    var artifactBottomLine = MapLine(middlePoint, bottomPoint, null)
+
+    init {
+        topFriendLine.startLines.addAll(Arrays.asList(middleFriendLine, bottomFriendLine))
+        topFriendLine.endLines.addAll(Arrays.asList(topEnemyLine, artifactTopLine))
+
+        topEnemyLine.startLines.addAll(Arrays.asList(topFriendLine, artifactTopLine))
+        topEnemyLine.endLines.addAll(Arrays.asList(middleEnemyLine, bottomEnemyLine))
+
+        middleFriendLine.startLines.addAll(Arrays.asList(topFriendLine, bottomFriendLine))
+        middleFriendLine.endLines.addAll(Arrays.asList(topEnemyLine, artifactBottomLine, artifactTopLine))
+
+        middleEnemyLine.startLines.addAll(Arrays.asList(topFriendLine, artifactBottomLine, artifactTopLine))
+        middleEnemyLine.endLines.addAll(Arrays.asList(topEnemyLine, bottomEnemyLine))
+
+        bottomFriendLine.startLines.addAll(Arrays.asList(topFriendLine, middleFriendLine))
+        bottomFriendLine.endLines.addAll(Arrays.asList(artifactBottomLine, bottomEnemyLine))
+
+        bottomEnemyLine.startLines.addAll(Arrays.asList(artifactBottomLine, bottomFriendLine))
+        bottomEnemyLine.endLines.addAll(Arrays.asList(topEnemyLine, middleEnemyLine))
+
+        artifactTopLine.startLines.addAll(Arrays.asList(topFriendLine, topEnemyLine))
+        artifactTopLine.endLines.addAll(Arrays.asList(middleFriendLine, middleEnemyLine, artifactBottomLine))
+
+        artifactBottomLine.startLines.addAll(Arrays.asList(middleFriendLine, middleEnemyLine, artifactTopLine))
+        artifactBottomLine.endLines.addAll(Arrays.asList(bottomFriendLine, bottomEnemyLine))
+
+        mapLines.addAll(Arrays.asList(
+                topFriendLine, topEnemyLine, middleFriendLine, middleEnemyLine, bottomFriendLine, bottomEnemyLine, artifactTopLine, artifactBottomLine
+        ))
+
+        mapPoints.addAll(Arrays.asList(
+                friendBasePoint, topPoint, middlePoint, bottomPoint, enemyBasePoint
+        ))
+
+        attackLines.put(LaneType.TOP, AttackLine(topFriendLine, topEnemyLine))
+        attackLines.put(LaneType.MIDDLE, AttackLine(middleFriendLine, middleEnemyLine))
+        attackLines.put(LaneType.BOTTOM, AttackLine(bottomFriendLine, bottomEnemyLine))
+    }
+
+    val LINE_RESOLVING_POSITION = 200.0
+    val LINE_RESOLVING_DISTANCE = 200.0
+
+    val DEAD_TOWER_HP_FACTOR = 0.1
+
+    val START_POINT_POSITON = 300.0
+
+    var deadGuardTowers: MutableMap<Long, Building> = HashMap()
 }
