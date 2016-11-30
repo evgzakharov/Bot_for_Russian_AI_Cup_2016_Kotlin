@@ -1,3 +1,3 @@
 data class MatrixPoint(
-        val diffX: Short,
-        val diffY: Short)
+        val diffX: Int,
+        val diffY: Int)

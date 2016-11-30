@@ -90,6 +90,8 @@ abstract class Action {
                     if (noFriends && hgIsLow && buldingWillShoot || buldingIsToClose || hgIsVeryLow)
                         buldingCondition = true
                 } else {
+                    demageRadius = game.factionBaseAttackRange + MIN_CLOSEST_DISTANCE
+
                     val buldingIsToClose = distanceToBuilding <= demageRadius * MIN_DISTANCE_TO_TOWER_FACTOR
 
                     val hgIsLow = self.life < LOW_HP_NEAREST_BASE_FACTOR * self.maxLife

@@ -66,10 +66,16 @@ class MapWayFinder(world: World, game: Game, private val wizard: Wizard) {
                     .mapNotNull { wizardPosition -> findMapWayPoint(wizardPosition, linePositions, safeWay) }
                     .minBy { it.first }
 
-            if (findWayPoint == null && safeWay == true)
-                return wizardPositions
+            if (findWayPoint == null && safeWay == true) {
+                val unsafePoint = wizardPositions
                         .mapNotNull { wizardPosition -> findMapWayPoint(wizardPosition, linePositions, false) }
-                        .minBy { it.first }?.second!!
+                        .minBy { it.first }?.second
+
+                if (unsafePoint == null)
+                    throw RuntimeException("error in map wayFinder")
+                else
+                    return unsafePoint
+            }
 
             if (findWayPoint == null)
                 throw RuntimeException("something goes wrong")
@@ -97,13 +103,19 @@ class MapWayFinder(world: World, game: Game, private val wizard: Wizard) {
 
             if (enemyWizardPositions.isNotEmpty()) {
                 val isStartSafe = enemyWizardPositions.values
-                        .any { enemyWizardsLocation -> enemyWizardsLocation >= wizardLinePosition.position }
+                        .any { enemyWizardsLocation ->
+                            enemyWizardsLocation >= wizardLinePosition.position
+                                    || enemyWizardsLocation < SAFE_WIZARD_DISTANCE
+                        }
 
                 if (!isStartSafe)
                     startLines.clear()
 
                 val isEndSafe = enemyWizardPositions.values
-                        .any { enemyWizardsLocation -> enemyWizardsLocation <= wizardLinePosition.position }
+                        .any { enemyWizardsLocation ->
+                            enemyWizardsLocation <= wizardLinePosition.position
+                                    || enemyWizardsLocation > wizardMapLine.lineLength - SAFE_WIZARD_DISTANCE
+                        }
 
                 if (!isEndSafe)
                     endLines.clear()
@@ -230,10 +242,15 @@ class MapWayFinder(world: World, game: Game, private val wizard: Wizard) {
 
                         if (checkedMapLine.startPoint == wayParams.startPoint)
                             return@filter checkedMapLine.enemyWizardPositions.values
-                                    .all { position -> linePosition.position < position }
+                                    .all { position ->
+                                        linePosition.position < position
+                                                || position > linePosition.mapLine.lineLength - SAFE_WIZARD_DISTANCE
+                                    }
                         else
                             return@filter checkedMapLine.enemyWizardPositions.values
-                                    .all { position -> linePosition.position < position }
+                                    .all { position ->
+                                        linePosition.position > position || position < SAFE_WIZARD_DISTANCE
+                                    }
                     } else
                         false
                 }.firstOrNull()
@@ -275,9 +292,11 @@ class MapWayFinder(world: World, game: Game, private val wizard: Wizard) {
     companion object {
 
         val NEXT_LINE_DISTANCE: Double = 300.0
-        val WAY_FINDER_DISTANCE = 250.0
+        val WAY_FINDER_DISTANCE = 300.0
 
         val NEXT_LINE_DISTANCE_MULTIPLIER = 1.1
+
+        val SAFE_WIZARD_DISTANCE: Double = 100.0
     }
 
 

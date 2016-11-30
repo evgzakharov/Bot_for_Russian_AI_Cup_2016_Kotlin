@@ -1,12 +1,8 @@
 import MapHelper.Companion.attackLines
-import MapHelper.Companion.enemyBasePoint
 import MapHelper.Companion.friendBasePoint
 import MapHelper.Companion.mapLines
 import model.*
 import java.lang.StrictMath.abs
-
-import java.util.Comparator
-import java.util.HashMap
 
 data class BonusTimeCatch(var lastCatchTick: Int = 0)
 
@@ -17,6 +13,7 @@ class StrategyManager {
     lateinit var game: Game
     lateinit var move: Move
     lateinit var findHelper: FindHelper
+    lateinit var moveHelper: MoveHelper
 
     var actionMode: ActionMode = ActionMode.ATTACK
         private set
@@ -39,6 +36,7 @@ class StrategyManager {
         this.game = game
         this.move = move
         this.findHelper = FindHelper(world, game, self)
+        this.moveHelper = MoveHelper(self, world, game, move)
 
         initializeDefault()
 
@@ -46,13 +44,17 @@ class StrategyManager {
     }
 
     private fun makeDecision() {
-        updateBonusInfo()
-        actionDecision()
+        try {
+            updateBonusInfo()
+            actionDecision()
 
-        val laneDecision = laneDecision()
-        updateInfo(laneDecision)
+            val laneDecision = laneDecision()
+            updateInfo(laneDecision)
 
-        action()
+            action()
+        } catch (e: Throwable) {
+            moveHelper.goTo(friendBasePoint)
+        }
     }
 
     private fun updateInfo(laneDecision: Boolean) {
@@ -109,6 +111,9 @@ class StrategyManager {
             movingTarget = mayCatchBonus
             return
         }
+
+        actionMode = ActionMode.ATTACK
+        movingTarget = null
     }
 
     private fun updateBonusInfo() {
@@ -121,14 +126,15 @@ class StrategyManager {
     }
 
     private fun laneDecision(): Boolean {
-        if (game.tickCount < MIN_CHANGE_TICK_LIMIT) return false
-
         //defence
         val friendMostKillingLine = mapLines.shouldChangeLine(sortByEnemyTowers = false) {
             it.enemy == false && it.deadFriendTowerCount == 2 && it.enemyWizardPositions.isNotEmpty()
         }
         if (friendMostKillingLine)
             return true
+
+        if (game.tickCount < MIN_CHANGE_TICK_LIMIT)
+            return false
 
         if (game.tickCount - lastLaneChangeTick <= MIN_CHANGE_TICK_LIMIT)
             return false
@@ -184,7 +190,7 @@ class StrategyManager {
     companion object {
         const val MY_HP_MULTIPLIER: Double = 0.8
         const val TRY_TO_KILL_ENEMY_RADIUS: Double = 500.0
-        const val TRY_TO_CATCH_ARTIFACT: Double = 700.0
+        const val TRY_TO_CATCH_ARTIFACT: Double = 1200.0
 
         const val BONUS_UPDATE_TICK: Int = 2500
 

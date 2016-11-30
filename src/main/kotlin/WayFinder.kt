@@ -36,8 +36,8 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
                 for (diffY in -1..1) {
                     if (diffX == 0 && diffY == 0) continue
 
-                    val matrixPoint = MatrixPoint((diffX + stepMatrix.matrixPoint.diffX).toShort(),
-                            (diffY + stepMatrix.matrixPoint.diffY).toShort())
+                    val matrixPoint = MatrixPoint((diffX + stepMatrix.matrixPoint.diffX),
+                            (diffY + stepMatrix.matrixPoint.diffY))
 
                     val newPathCount = (stepMatrix.pathCount + 1.0 + abs(diffX * diffY) * 0.5).toFloat()
 
@@ -47,8 +47,13 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
                             continue
                     }
 
-                    val newX = stepMatrix.point.x + matrixStep * diffX
-                    val newY = stepMatrix.point.y + matrixStep * diffY
+                    val distanceMultiplier = if (abs(matrixPoint.diffX) > MULTIPLIER_FACTOR_DIFF
+                            || abs(matrixPoint.diffY) > MULTIPLIER_FACTOR_DIFF)
+                        MULTIPLIER_FACTOR
+                    else 1.0
+
+                    val newX = stepMatrix.point.x + matrixStep * diffX * distanceMultiplier
+                    val newY = stepMatrix.point.y + matrixStep * diffY * distanceMultiplier
                     val newPoint = Point2D(newX, newY)
 
                     if (!checkPointPosition(newPoint)) continue
@@ -137,8 +142,11 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
 
     companion object {
 
-        private val MAX_RANGE = 90.0
+        private val MAX_RANGE = 150.0
         private val MIN_CLOSEST_RANGE = 5.0
+
+        private val MULTIPLIER_FACTOR_DIFF = 3
+        private val MULTIPLIER_FACTOR = 4.0
     }
 
 }
