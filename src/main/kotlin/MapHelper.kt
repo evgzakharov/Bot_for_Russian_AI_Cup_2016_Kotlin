@@ -321,7 +321,7 @@ object MapHelper {
 
     val MOVE_FORWARD = 200.0
 
-    val CHANGE_POINT_TO_MOVE_MIN_TICK_DIFF: Int = 300
+    val CHANGE_POINT_TO_MOVE_MIN_TICK_DIFF: Int = 50
 
     var deadGuardTowers: MutableMap<Long, Building> = HashMap()
 }
