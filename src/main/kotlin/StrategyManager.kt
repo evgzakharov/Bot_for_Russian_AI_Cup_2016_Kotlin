@@ -1,6 +1,7 @@
 import MapHelper.attackLines
 import MapHelper.friendBasePoint
 import MapHelper.mapLines
+import MapHelper.wizard
 import model.*
 import java.lang.StrictMath.abs
 
@@ -25,7 +26,7 @@ class StrategyManager {
 
     private var gameManagers: MutableMap<ActionMode, Action> = mutableMapOf()
 
-    private var bonuses: Map<Point2D, BonusTimeCatch> = mapOf(
+    private var bonuses: Map<Point2D, BonusTimeCatch> = sortedMapOf(
             Point2D(1200.0, 1200.0) to BonusTimeCatch(),
             Point2D(2800.0, 2800.0) to BonusTimeCatch()
     )
@@ -119,10 +120,12 @@ class StrategyManager {
                 .filter { it.value.tickDiff() >= BONUS_UPDATE_TICK }
                 .keys
                 .filter { self.getDistanceTo(it) < TRY_TO_CATCH_ARTIFACT_DISTANCE2 }
-                .sortedByDescending { self.getDistanceTo(it) }
                 .firstOrNull()
 
-        if (mayCatchBonus != null) {
+        val wizardOnArtifactLine = MapHelper.getLinePositions(wizard, 1.0)
+                .find { it.mapLine.laneType == null }?.let { true } ?: false
+
+        if (mayCatchBonus != null && wizardOnArtifactLine) {
             val wizardInEnemyLine = MapHelper.getLinePositions(self, 1.0)
                     .filter { it.mapLine.enemy }
                     .firstOrNull()
@@ -221,7 +224,7 @@ class StrategyManager {
         const val MY_HP_MULTIPLIER: Double = 0.8
         const val TRY_TO_KILL_ENEMY_RADIUS: Double = 500.0
 
-        const val TRY_TO_CATCH_ARTIFACT_DISTANCE: Double = 700.0
+        const val TRY_TO_CATCH_ARTIFACT_DISTANCE: Double = 600.0
         const val TRY_TO_CATCH_ARTIFACT_DISTANCE2: Double = 1500.0
 
         const val BONUS_UPDATE_TICK: Int = 2500

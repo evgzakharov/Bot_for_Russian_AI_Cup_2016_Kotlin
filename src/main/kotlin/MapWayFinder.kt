@@ -20,7 +20,7 @@ class MapWayFinder(world: World, game: Game, private val wizard: Wizard) {
         val pointToMove = getPointTo(linePointToBaseEnemy, wizardOnLine.isNotEmpty(), null)
 
         return if (wizard.getDistanceTo(pointToMove) > POINT_IS_CLOSE) {
-            getPointTo(linePointToBaseEnemy, wizardOnLine.isNotEmpty(), pointToMove)
+            getPointTo(linePointToBaseEnemy, wizardOnLine.isEmpty(), pointToMove)
         } else
             pointToMove
     }

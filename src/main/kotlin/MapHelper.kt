@@ -245,8 +245,8 @@ object MapHelper {
 
     val friendBasePoint = Point2D(100.0, mapSize - 100.0)
     var topPoint = Point2D(300.0, 300.0)
-    var middlePoint = Point2D(1659.0, 1887.0)
-    var bottomPoint = Point2D(mapSize - 100.0, mapSize - 100.0)
+    var middlePoint = Point2D(2000.0, 2000.0)
+    var bottomPoint = Point2D(mapSize - 300.0, mapSize - 300.0)
     var enemyBasePoint = Point2D(mapSize - 100.0, 100.0)
 
     var topFriendLine = MapLine(friendBasePoint, topPoint, LaneType.TOP, false)
