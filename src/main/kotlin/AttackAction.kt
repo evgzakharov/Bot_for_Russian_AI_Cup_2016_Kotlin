@@ -8,11 +8,13 @@ import java.util.Optional
 class AttackAction : Action() {
     override fun move(target: Any?): Boolean {
         if (self.life < self.maxLife * Action.Companion.LOW_HP_FACTOR) {
+            safeHelper.tryToSafeByShield(self)
+
             moveHelper.goTo(mapWayFinder.getPreviousWaypoint(strategyManager.laneType!!))
             return true
         }
 
-        val nearestTarget = findHelper.nearestEnemy
+        val nearestTarget = findHelper.getNearestTarget()
 
         val nextWaypoint: Point2D?
         if (isNeedToMoveBack()) {

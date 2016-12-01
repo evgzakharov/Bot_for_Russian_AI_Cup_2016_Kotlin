@@ -18,6 +18,7 @@ abstract class Action {
     protected lateinit var moveHelper: MoveHelper
     protected lateinit var mapWayFinder: MapWayFinder
     protected lateinit var strategyManager: StrategyManager
+    protected lateinit var safeHelper: SafeHelper
 
     fun init(self: Wizard, world: World, game: Game, move: Move, strategyManager: StrategyManager) {
         this.self = self
@@ -29,6 +30,7 @@ abstract class Action {
         this.moveHelper = MoveHelper(self, world, game, move)
         this.mapWayFinder = MapWayFinder(world, game, self)
         this.strategyManager = strategyManager
+        this.safeHelper = SafeHelper(self, game, move)
     }
 
     open fun move(target: Any?): Boolean {
@@ -38,6 +40,14 @@ abstract class Action {
                 .firstOrNull()
 
         nearestTree?.let { tree -> shootHelder.shootToTarget(tree) }
+
+        if (nearestTree == null) {
+            val veryCloseTree = findHelper.getAllTrees()
+                    .filter { tree -> self.getDistanceTo(tree) <= self.radius + tree.radius + MIN_CLOSEST_DISTANCE }
+                    .firstOrNull()
+
+            veryCloseTree?.let { tree -> shootHelder.shootToTarget(tree) }
+        }
 
         return true
     }
@@ -111,11 +121,11 @@ abstract class Action {
 
         var singleEnemyCondition = false
         if (enemyWithSmallestHP != null) {
-            val enemyIsToClose = enemyWithSmallestHP.getDistanceTo(self) <= game.wizardCastRange * 0.8
+            val enemyIsToClose = enemyWithSmallestHP.getDistanceTo(self) <= game.wizardCastRange * SINGLE_ENEMY_CLOSE_RANGE_FACTOR
 
-            val hpIsToLow = self.life < LOW_HP_FACTOR * 2 * self.maxLife
-                    && self.life * (1 - LOW_HP_FACTOR / 2) < enemyWithSmallestHP.life
-                    && enemyWithSmallestHP.getAngleTo(self) <= game.staffSector * 2
+            val hpIsToLow = self.life < SINGLE_ENEMY_LOG_HP_FACTOR * self.maxLife
+                    && self.life * SINGLE_ENEMY_LOG_HP_ENEMY_FACTOR < enemyWithSmallestHP.life
+                    && enemyWithSmallestHP.getAngleTo(self) <= game.staffSector * SINGLE_ENEMY_STAFF_FACTOR
 
             if (enemyIsToClose || hpIsToLow)
                 singleEnemyCondition = true
@@ -127,7 +137,7 @@ abstract class Action {
         val enemiesLookingToMe = enemyWizards
                 .filter { unit ->
                     val distanceTo = self.getDistanceTo(unit)
-                    distanceTo < game.wizardCastRange * 1.1 && abs(unit.getAngleTo(self)) <= game.staffSector * 1.2
+                    distanceTo < game.wizardCastRange * MULTI_ENEMY_CAST_RANGE_FACTOR && abs(unit.getAngleTo(self)) <= game.staffSector * MULTI_ENEMY_STAFF_SECTOR
                 }
 
         var multiEnemiesCondition = false
@@ -135,7 +145,7 @@ abstract class Action {
             val enemyWithBiggestHP = enemiesLookingToMe
                     .maxBy { it.life } ?: return false
 
-            val hpIsLow = self.life < self.maxLife * (LOW_HP_FACTOR * 3) && self.life * (1 - LOW_HP_FACTOR / 2) < enemyWithBiggestHP.life
+            val hpIsLow = self.life < self.maxLife * MULTI_ENEMY_LOW_HP_FACTOR && self.life * MULTI_ENEMY_LOW_HP_BIGGER_HP_FACTOR < enemyWithBiggestHP.life
 
             if (hpIsLow)
                 multiEnemiesCondition = true
@@ -170,10 +180,20 @@ abstract class Action {
         val MIN_BASE_DISTANCE_FACTOR = 0.5
 
         val MIN_CLOSEST_DISTANCE = 5.0
-        val MIN_CLOSEST_TREE_DISTANCE = 25.0
+        val MIN_CLOSEST_TREE_DISTANCE = 10.0
 
         val FETISH_CLOSE_MULTIPLIER = 1.2
         val ORC_CLOSE_MULTIPLIER = 3.0
+
+        val MULTI_ENEMY_CAST_RANGE_FACTOR = 1.1
+        val MULTI_ENEMY_STAFF_SECTOR = 1.7
+        val MULTI_ENEMY_LOW_HP_FACTOR = 0.8
+        val MULTI_ENEMY_LOW_HP_BIGGER_HP_FACTOR = 0.8
+
+        val SINGLE_ENEMY_LOG_HP_FACTOR = 0.5
+        val SINGLE_ENEMY_LOG_HP_ENEMY_FACTOR = 0.9
+        val SINGLE_ENEMY_CLOSE_RANGE_FACTOR = 0.8
+        val SINGLE_ENEMY_STAFF_FACTOR = 1.2
 
     }
 }

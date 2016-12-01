@@ -19,7 +19,7 @@ class MapWayFinder(world: World, game: Game, private val wizard: Wizard) {
 
         val pointToMove = getPointTo(linePointToBaseEnemy, wizardOnLine.isNotEmpty(), null)
 
-        return if (wizard.getDistanceTo(pointToMove) < POINT_IS_CLOSE) {
+        return if (wizard.getDistanceTo(pointToMove) > POINT_IS_CLOSE) {
             getPointTo(linePointToBaseEnemy, wizardOnLine.isNotEmpty(), pointToMove)
         } else
             pointToMove
@@ -205,7 +205,7 @@ class MapWayFinder(world: World, game: Game, private val wizard: Wizard) {
     companion object {
 
         val NEXT_LINE_DISTANCE: Double = 350.0
-        val WAY_FINDER_DISTANCE = 350.0
+        val WAY_FINDER_DISTANCE = 150.0
 
         val NEXT_LINE_DISTANCE_MULTIPLIER = 1.1
 

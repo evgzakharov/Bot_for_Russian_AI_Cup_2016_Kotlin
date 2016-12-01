@@ -1,3 +1,4 @@
+import MapHelper.findHelper
 import model.*
 
 import java.util.*
@@ -101,27 +102,35 @@ class FindHelper(private val world: World, private val game: Game, private val w
         return self !== unit.faction && unit.faction !== Faction.NEUTRAL
     }
 
-    val nearestEnemy: LivingUnit?
-        get() {
-            val nearestWizard = getNearestTarget(world.getWizards())
+    fun getNearestTarget(): LivingUnit? {
+        val nearestWizard = getNearestTarget(findHelper.getAllWizards(onlyEnemy = true, onlyNearest = true))
 
-            if (nearestWizard != null) return nearestWizard
+        if (nearestWizard != null) return nearestWizard
 
-            val nearestBuilding = getNearestTarget(world.getBuildings())
+        val nearestBuilding = getNearestTarget(findHelper.getAllBuldings(onlyEnemy = true))
 
-            if (nearestBuilding != null)
-                return nearestBuilding
-            else
-                return getNearestTarget(world.getMinions())
-        }
+        if (nearestBuilding != null) return nearestBuilding
 
-    fun getNearestTarget(targets: Array<out LivingUnit>): LivingUnit? {
+        val nearestFetish = getNearestTarget(findHelper.getAllMinions(onlyEnemy = true, onlyNearest = true), minionType = MinionType.FETISH_BLOWDART)
+
+        val nearestOrc = getNearestTarget(findHelper.getAllMinions(onlyEnemy = true, onlyNearest = true), minionType = MinionType.ORC_WOODCUTTER)
+
+        val minionWithMinimumHp = listOf(nearestFetish, nearestOrc)
+                .filterNotNull()
+                .find { it.life < it.maxLife * MIN_MINION_LIFE_FACTOR }
+
+        if (minionWithMinimumHp != null) return minionWithMinimumHp
+
+        else return listOf(nearestFetish, nearestOrc)
+                .filterNotNull()
+                .firstOrNull()
+    }
+
+    fun getNearestTarget(targets: List<LivingUnit>, minionType: MinionType? = null): LivingUnit? {
         val nearestTargets = ArrayList<LivingUnit>()
 
         for (target in targets) {
-            if (!isEnemy(wizard.faction, target)) {
-                continue
-            }
+            if (minionType != null && target is Minion && target.type != minionType) continue
 
             if (abs(wizard.x - target.x) > game.wizardCastRange * 2) continue
             if (abs(wizard.y - target.y) > game.wizardCastRange * 2) continue
@@ -154,5 +163,7 @@ class FindHelper(private val world: World, private val game: Game, private val w
             allMinions = HashMap<List<Boolean>, List<Minion>>()
             allTrees = null
         }
+
+        val MIN_MINION_LIFE_FACTOR: Double = 0.3
     }
 }
