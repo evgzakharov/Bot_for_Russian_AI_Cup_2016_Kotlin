@@ -34,7 +34,7 @@ abstract class Action {
     open fun move(target: Any?): Boolean {
         val nearestTree = findHelper.getAllTrees()
                 .filter { tree -> abs(self.getAngleTo(tree)) < PI / 2 }
-                .filter { tree -> self.getDistanceTo(tree) <= self.radius + tree.radius + MIN_CLOSEST_DISTANCE }
+                .filter { tree -> self.getDistanceTo(tree) <= self.radius + tree.radius + MIN_CLOSEST_TREE_DISTANCE }
                 .firstOrNull()
 
         nearestTree?.let { tree -> shootHelder.shootToTarget(tree) }
@@ -72,9 +72,9 @@ abstract class Action {
 
             val distanceToBuilding = self.getDistanceTo(nearestBuilding)
 
-            if (nearestBuilding.type === BuildingType.GUARDIAN_TOWER) {
-                var demageRadius = game.guardianTowerAttackRange + MIN_CLOSEST_DISTANCE
 
+            if (nearestBuilding.type === BuildingType.GUARDIAN_TOWER) {
+                val demageRadius = game.guardianTowerAttackRange + MIN_CLOSEST_DISTANCE
                 if (distanceToBuilding <= demageRadius) {
                     val noFriends = nearestFriendToBuilding
                             ?.let { livingUnit -> distanceToBuilding < livingUnit.getDistanceTo(nearestBuilding) } ?: true
@@ -89,16 +89,16 @@ abstract class Action {
 
                     if (noFriends && hgIsLow && buldingWillShoot || buldingIsToClose || hgIsVeryLow)
                         buldingCondition = true
-                } else {
-                    demageRadius = game.factionBaseAttackRange + MIN_CLOSEST_DISTANCE
-
-                    val buldingIsToClose = distanceToBuilding <= demageRadius * MIN_DISTANCE_TO_TOWER_FACTOR
-
-                    val hgIsLow = self.life < LOW_HP_NEAREST_BASE_FACTOR * self.maxLife
-
-                    if (buldingIsToClose || hgIsLow)
-                        buldingCondition = true
                 }
+            } else if (nearestBuilding.type === BuildingType.FACTION_BASE) {
+                val demageRadius = game.factionBaseAttackRange + MIN_CLOSEST_DISTANCE
+
+                val buldingIsToClose = distanceToBuilding <= demageRadius * MIN_BASE_DISTANCE_FACTOR
+
+                val hgIsLow = self.life < LOW_HP_NEAREST_BASE_FACTOR * self.maxLife
+
+                if (buldingIsToClose || hgIsLow)
+                    buldingCondition = true
             }
         }
         return buldingCondition
@@ -148,10 +148,10 @@ abstract class Action {
                 .filter { minion ->
                     if (minion.type === MinionType.FETISH_BLOWDART)
                         findHelper.getAllMinions(true, true)
-                                .filter { self.getDistanceTo(minion) <= game.fetishBlowdartAttackRange * 1.1 }.isNotEmpty()
+                                .filter { self.getDistanceTo(minion) <= game.fetishBlowdartAttackRange * FETISH_CLOSE_MULTIPLIER }.isNotEmpty()
                     else if (minion.type === MinionType.ORC_WOODCUTTER)
                         findHelper.getAllMinions(true, true)
-                                .filter { self.getDistanceTo(minion) <= game.orcWoodcutterAttackRange * 3 }.isNotEmpty()
+                                .filter { self.getDistanceTo(minion) <= game.orcWoodcutterAttackRange * ORC_CLOSE_MULTIPLIER }.isNotEmpty()
                     else
                         false
                 }.count()
@@ -167,7 +167,13 @@ abstract class Action {
         val LOW_HP_NEAREST_BASE_FACTOR = 0.5
 
         val MIN_DISTANCE_TO_TOWER_FACTOR = 0.7
+        val MIN_BASE_DISTANCE_FACTOR = 0.5
 
-        val MIN_CLOSEST_DISTANCE = 20.0
+        val MIN_CLOSEST_DISTANCE = 5.0
+        val MIN_CLOSEST_TREE_DISTANCE = 10.0
+
+        val FETISH_CLOSE_MULTIPLIER = 1.2
+        val ORC_CLOSE_MULTIPLIER = 3.0
+
     }
 }

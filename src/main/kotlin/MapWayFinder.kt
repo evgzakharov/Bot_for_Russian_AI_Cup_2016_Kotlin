@@ -204,8 +204,8 @@ class MapWayFinder(world: World, game: Game, private val wizard: Wizard) {
 
     companion object {
 
-        val NEXT_LINE_DISTANCE: Double = 300.0
-        val WAY_FINDER_DISTANCE = 300.0
+        val NEXT_LINE_DISTANCE: Double = 350.0
+        val WAY_FINDER_DISTANCE = 350.0
 
         val NEXT_LINE_DISTANCE_MULTIPLIER = 1.1
 

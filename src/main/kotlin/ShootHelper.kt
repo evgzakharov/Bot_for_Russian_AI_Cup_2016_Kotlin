@@ -16,19 +16,21 @@ class ShootHelper(private val self: Wizard, private val game: Game, private val 
         if (abs(angle) < game.staffSector / 2.0) {
             var missleRadius: Double = 0.0
 
-            if (self.getSkills().isNotEmpty()
-                    && nearestTarget is Wizard
-                    && self.getSkills().contains(SkillType.FROST_BOLT)
-                    && self.mana > game.frostBoltManacost
-                    && self.getRemainingCooldownTicksByAction()[ActionType.FROST_BOLT.ordinal] == 0) {
-                move.action = ActionType.FROST_BOLT
-                missleRadius = game.frostBoltRadius
-            } else if (self.getSkills().isNotEmpty()
-                    && self.getSkills().contains(SkillType.FIREBALL)
-                    && self.mana > game.fireballManacost
-                    && self.getRemainingCooldownTicksByAction()[ActionType.FIREBALL.ordinal] == 0) {
-                move.action = ActionType.FIREBALL
-                missleRadius = game.fireballRadius
+            val isSkillesNotEmpty = self.getSkills().isNotEmpty()
+
+            if (isSkillesNotEmpty && nearestTarget !is Tree) {
+
+                if (canShootByFireboll(nearestTarget)) {
+                    move.action = ActionType.FIREBALL
+                    missleRadius = game.fireballRadius
+                } else if (canShootByFrostBolt(nearestTarget)) {
+                    move.action = ActionType.FROST_BOLT
+                    missleRadius = game.frostBoltRadius
+                } else {
+                    move.action = ActionType.MAGIC_MISSILE
+                    missleRadius = game.magicMissileRadius
+                }
+
             } else {
                 move.action = ActionType.MAGIC_MISSILE
                 missleRadius = game.magicMissileRadius
@@ -37,8 +39,40 @@ class ShootHelper(private val self: Wizard, private val game: Game, private val 
             move.castAngle = angle
             move.minCastDistance = distance - nearestTarget.radius + missleRadius
         }
-
-
     }
 
+    fun canShootByFireboll(nearestTarget: LivingUnit): Boolean {
+        if (!self.getSkills().contains(SkillType.FIREBALL)) return false
+
+        if (self.mana < game.frostBoltManacost
+                || self.getRemainingCooldownTicksByAction()[ActionType.FROST_BOLT.ordinal] != 0) return false
+
+        if (self.getDistanceTo(nearestTarget) < game.fireballRadius) return false
+
+        return when (nearestTarget) {
+            is Tree -> false
+            is Wizard, is Building -> true
+            is Minion -> self.mana > self.maxMana * MIN_MANA_FACTOR
+            else -> false
+        }
+    }
+
+
+    fun canShootByFrostBolt(nearestTarget: LivingUnit): Boolean {
+        if (!self.getSkills().contains(SkillType.FROST_BOLT)) return false
+
+        if (self.mana < game.fireballManacost
+                || self.getRemainingCooldownTicksByAction()[ActionType.FIREBALL.ordinal] != 0) return false
+
+        return when (nearestTarget) {
+            is Tree, is Building -> false
+            is Wizard -> true
+            is Minion -> self.mana > self.maxMana * MIN_MANA_FACTOR
+            else -> false
+        }
+    }
+
+    companion object {
+        val MIN_MANA_FACTOR: Double = 0.5
+    }
 }

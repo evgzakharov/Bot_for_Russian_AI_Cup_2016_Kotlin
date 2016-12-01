@@ -26,14 +26,14 @@ class FindHelper(private val world: World, private val game: Game, private val w
         return units
     }
 
-    fun getAllMovingUnits(onlyEnemy: Boolean, onlyNearest: Boolean): List<LivingUnit> {
-        val cacheKey = listOf(onlyEnemy, onlyNearest)
+    fun getAllMovingUnits(onlyEnemy: Boolean, onlyNearest: Boolean, withNeutrals: Boolean = false): List<LivingUnit> {
+        val cacheKey = listOf(onlyEnemy, onlyNearest, withNeutrals)
         if (allMovingUnitsCache[cacheKey] != null) return allMovingUnitsCache[cacheKey]!!
 
         val units = ArrayList<LivingUnit>()
 
         units.addAll(getAllWizards(onlyEnemy, onlyNearest))
-        units.addAll(getAllMinions(onlyEnemy, onlyNearest))
+        units.addAll(getAllMinions(onlyEnemy, onlyNearest, withNeutrals))
 
         allMovingUnitsCache.put(cacheKey, units)
 
@@ -74,7 +74,7 @@ class FindHelper(private val world: World, private val game: Game, private val w
     }
 
     fun getAllMinions(onlyEnemy: Boolean, onlyNearest: Boolean, withNeutrals: Boolean = false): List<Minion> {
-        val cacheKey = Arrays.asList(onlyEnemy, onlyNearest)
+        val cacheKey = Arrays.asList(onlyEnemy, onlyNearest, withNeutrals)
 
         if (allMinions[cacheKey] != null) return allMinions[cacheKey]!!
 

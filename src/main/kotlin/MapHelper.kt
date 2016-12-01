@@ -226,12 +226,11 @@ object MapHelper {
         val lane = attackLines[laneType]!!
 
         if (lane.enemy.friendPosition != null)
-            return getPointInLine(lane.enemy, lane.enemy.friendPosition!!)
-        else if (lane.friend.friendPosition == null || lane.friend.friendPosition == 0.0)
-            return getPointInLine(lane.friend, lane.friend.lineLength)
+            return getPointInLine(lane.enemy, lane.enemy.friendPosition!! + MOVE_FORWARD)
+        else if (lane.friend.friendPosition != null || lane.friend.enemyPosition != null)
+            return getPointInLine(lane.friend, max(lane.friend.friendPosition ?: 0.0, lane.friend.enemyPosition ?: 0.0) + MOVE_FORWARD)
         else {
-            return getPointInLine(lane.friend, max(max(lane.friend.friendPosition ?: 0.0,
-                    lane.friend.enemyPosition ?: 0.0), START_POINT_POSITON))
+            return getPointInLine(lane.friend, lane.friend.lineLength - START_POINT_POSITON)
         }
     }
 
@@ -300,12 +299,14 @@ object MapHelper {
         attackLines.put(LaneType.BOTTOM, AttackLine(bottomFriendLine, bottomEnemyLine))
     }
 
-    val LINE_RESOLVING_POSITION = 200.0
-    val LINE_RESOLVING_DISTANCE = 200.0
+    val LINE_RESOLVING_POSITION = 250.0
+    val LINE_RESOLVING_DISTANCE = 250.0
 
     val DEAD_TOWER_HP_FACTOR = 0.1
 
     val START_POINT_POSITON = 300.0
+
+    val MOVE_FORWARD = 200.0
 
     var deadGuardTowers: MutableMap<Long, Building> = HashMap()
 }

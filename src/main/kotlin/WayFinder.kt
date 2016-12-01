@@ -17,13 +17,16 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
         val matrixStart = Matrix(Point2D(wizard.x, wizard.y), MatrixPoint(0, 0), null)
         matrixStart.pathCount = 0.0
 
-        val allUnits = findHelper.getAllUnits(withTrees =  true, onlyEnemy = false, onlyNearest =  true, withNeutrals = true)
-        val findLine = growMatrix(listOf(matrixStart), point, allUnits)
+        val allMovingUnits = findHelper.getAllMovingUnits(onlyEnemy = false, onlyNearest = true, withNeutrals = true)
+        val allBuildings = findHelper.getAllBuldings(onlyEnemy = false)
+        val allTrees = findHelper.getAllTrees()
+
+        val findLine = growMatrix(listOf(matrixStart), point, allMovingUnits, allBuildings, allTrees)
 
         return findLine
     }
 
-    private fun growMatrix(stepPoints: List<Matrix>, findingWayPoint: Point2D, allUnits: List<LivingUnit>): List<Point2D> {
+    private fun growMatrix(stepPoints: List<Matrix>, findingWayPoint: Point2D, allMovingUnits: List<LivingUnit>, allBuildings: List<LivingUnit>, allTrees: List<LivingUnit>): List<Point2D> {
         val newStepPoints = ArrayList<Matrix>()
 
         var lastMatrix: Matrix? = null
@@ -35,16 +38,10 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
                     val matrixPoint = MatrixPoint((diffX + stepMatrix.matrixPoint.diffX),
                             (diffY + stepMatrix.matrixPoint.diffY))
 
-                    val newPathCount = (stepMatrix.pathCount + 1.0 + abs(diffX * diffY) * 0.5).toFloat()
-
-                    if (stepMatrix.matrixPoints!!.keys.contains(matrixPoint)) {
-                        val matrixAtPoint = stepMatrix.matrixPoints!![matrixPoint]
-                        if (matrixAtPoint!!.pathCount < newPathCount)
-                            continue
-                    }
-
-                    val distanceMultiplier = if (abs(matrixPoint.diffX) > MULTIPLIER_FACTOR_DIFF
+                    val notNearest = (abs(matrixPoint.diffX) > MULTIPLIER_FACTOR_DIFF
                             || abs(matrixPoint.diffY) > MULTIPLIER_FACTOR_DIFF)
+
+                    val distanceMultiplier = if (notNearest)
                         MULTIPLIER_FACTOR
                     else 1.0
 
@@ -52,14 +49,28 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
                     val newY = stepMatrix.point.y + matrixStep * diffY * distanceMultiplier
                     val newPoint = Point2D(newX, newY)
 
+                    val treeMultiplier = if (!freeLocation(newPoint, allTrees)) 5.0
+                    else 1.0
+
+                    val step = 1.0 + abs(diffX * diffY) * 0.5
+
+                    val newPathCount = (stepMatrix.pathCount + step * distanceMultiplier * treeMultiplier).toFloat()
+
+                    if (stepMatrix.matrixPoints!!.keys.contains(matrixPoint)) {
+                        val matrixAtPoint = stepMatrix.matrixPoints!![matrixPoint]
+                        if (matrixAtPoint!!.pathCount < newPathCount)
+                            continue
+                    }
+
                     if (!checkPointPosition(newPoint)) continue
 
-                    val newMatrix = Matrix(newPoint, matrixPoint, stepMatrix)
-                    newMatrix.pathCount = newPathCount.toDouble()
+                    if (!freeLocation(newPoint, allMovingUnits)) continue
+                    if (!freeLocation(newPoint, allBuildings)) continue
 
-                    if (!freeLocation(newPoint, allUnits)) continue
+                    val newMatrix = Matrix(newPoint, matrixPoint, stepMatrix)
 
                     newStepPoints.add(newMatrix)
+                    newMatrix.pathCount = newPathCount.toDouble()
                     newMatrix.matrixPoints!!.put(matrixPoint, newMatrix)
                     lastMatrix = newMatrix
 
@@ -70,7 +81,7 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
         }
 
         if (!newStepPoints.isEmpty()) {
-            val point2DS = growMatrix(newStepPoints, findingWayPoint, allUnits)
+            val point2DS = growMatrix(newStepPoints, findingWayPoint, allMovingUnits, allBuildings, allTrees)
             if (point2DS.isEmpty()) {
                 if (stepPoints.size == 1 && lastMatrix != null && lastMatrix.matrixPoints!!.isNotEmpty()) {
                     val nearestMatrix = lastMatrix.matrixPoints!!.values
@@ -85,8 +96,8 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
         return emptyList()
     }
 
-    private fun freeLocation(newPoint: Point2D, allUnits: List<LivingUnit>): Boolean {
-        return allUnits
+    private fun freeLocation(newPoint: Point2D, units: List<LivingUnit>): Boolean {
+        return units
                 .filter { unit -> abs(unit.x - wizard.x) < game.wizardCastRange }
                 .filter { unit -> abs(unit.x - wizard.x) < game.wizardCastRange }
                 .filter { unit -> isFractionBase(unit) || abs(unit.x - newPoint.x) < MAX_RANGE }
@@ -138,11 +149,11 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
 
     companion object {
 
-        private val MAX_RANGE = 150.0
+        private val MAX_RANGE = 120.0
         private val MIN_CLOSEST_RANGE = 5.0
 
         private val MULTIPLIER_FACTOR_DIFF = 3
-        private val MULTIPLIER_FACTOR = 4.0
+        private val MULTIPLIER_FACTOR = 2.0
     }
 
 }
