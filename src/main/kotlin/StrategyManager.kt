@@ -125,6 +125,7 @@ class StrategyManager {
         val wizardOnArtifactLine = MapHelper.getLinePositions(wizard, 1.0)
                 .find { it.mapLine.laneType == null }?.let { true } ?: false
 
+        //TODO: add more creterias
         if (mayCatchBonus != null && wizardOnArtifactLine) {
             val wizardInEnemyLine = MapHelper.getLinePositions(self, 1.0)
                     .filter { it.mapLine.enemy }
@@ -158,7 +159,7 @@ class StrategyManager {
         if (friendMostKillingLine)
             return true
 
-        if (world.tickIndex < MIN_CHANGE_TICK_LIMIT)
+        if (world.tickIndex < MIN_START_CHANGE_TICK)
             return false
 
         if (world.tickIndex - lastLaneChangeTick <= MIN_CHANGE_TICK_LIMIT)
@@ -229,6 +230,7 @@ class StrategyManager {
 
         const val BONUS_UPDATE_TICK: Int = 2500
 
+        const val MIN_START_CHANGE_TICK: Int = 250
         const val MIN_CHANGE_TICK_LIMIT: Int = 2500
 
         const val LINE_POSITION_MULTIPLIER: Double = 0.2
