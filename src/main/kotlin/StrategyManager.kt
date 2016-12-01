@@ -154,7 +154,9 @@ class StrategyManager {
     private fun laneDecision(): Boolean {
         //defence
         val friendMostKillingLine = mapLines.shouldChangeLine(sortByEnemyTowers = false) {
-            it.enemy == false && it.deadFriendTowerCount == 2 && it.enemyWizardPositions.isNotEmpty()
+            it.enemy == false &&
+                    ((it.deadFriendTowerCount >= 1 && it.enemyWizardPositions.isNotEmpty() && it.friendWizardsOnLine() == 0)
+                            || (it.deadFriendTowerCount == 2 && it.enemyWizardPositions.isNotEmpty()))
         }
         if (friendMostKillingLine)
             return true
@@ -231,7 +233,7 @@ class StrategyManager {
         const val BONUS_UPDATE_TICK: Int = 2500
 
         const val MIN_START_CHANGE_TICK: Int = 250
-        const val MIN_CHANGE_TICK_LIMIT: Int = 2500
+        const val MIN_CHANGE_TICK_LIMIT: Int = 1500
 
         const val LINE_POSITION_MULTIPLIER: Double = 0.2
 
