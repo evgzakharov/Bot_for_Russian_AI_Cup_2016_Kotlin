@@ -45,7 +45,7 @@ class ShootHelper(private val self: Wizard, private val game: Game, private val 
         if (!self.getSkills().contains(SkillType.FIREBALL)) return false
 
         if (self.mana < game.frostBoltManacost
-                || self.getRemainingCooldownTicksByAction()[ActionType.FROST_BOLT.ordinal] != 0) return false
+                || self.getRemainingCooldownTicksByAction()[ActionType.FIREBALL.ordinal] != 0) return false
 
         if (self.getDistanceTo(nearestTarget) < game.fireballRadius) return false
 
@@ -62,7 +62,7 @@ class ShootHelper(private val self: Wizard, private val game: Game, private val 
         if (!self.getSkills().contains(SkillType.FROST_BOLT)) return false
 
         if (self.mana < game.fireballManacost
-                || self.getRemainingCooldownTicksByAction()[ActionType.FIREBALL.ordinal] != 0) return false
+                || self.getRemainingCooldownTicksByAction()[ActionType.FROST_BOLT.ordinal] != 0) return false
 
         return when (nearestTarget) {
             is Tree, is Building -> false

@@ -33,7 +33,7 @@ abstract class Action {
 
     open fun move(target: Any?): Boolean {
         val nearestTree = findHelper.getAllTrees()
-                .filter { tree -> abs(self.getAngleTo(tree)) < PI / 2 }
+                .filter { tree -> abs(self.getAngleTo(tree)) < PI / 4 }
                 .filter { tree -> self.getDistanceTo(tree) <= self.radius + tree.radius + MIN_CLOSEST_TREE_DISTANCE }
                 .firstOrNull()
 
@@ -170,7 +170,7 @@ abstract class Action {
         val MIN_BASE_DISTANCE_FACTOR = 0.5
 
         val MIN_CLOSEST_DISTANCE = 5.0
-        val MIN_CLOSEST_TREE_DISTANCE = 10.0
+        val MIN_CLOSEST_TREE_DISTANCE = 25.0
 
         val FETISH_CLOSE_MULTIPLIER = 1.2
         val ORC_CLOSE_MULTIPLIER = 3.0

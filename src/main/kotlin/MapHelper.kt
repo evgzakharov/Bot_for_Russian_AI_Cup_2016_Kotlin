@@ -227,7 +227,7 @@ object MapHelper {
 
         if (lane.enemy.friendPosition != null)
             return getPointInLine(lane.enemy, lane.enemy.friendPosition!! + MOVE_FORWARD)
-        else if (lane.friend.friendPosition != null || lane.friend.enemyPosition != null)
+        else if (lane.friend.friendPosition != 0.0 || lane.friend.enemyPosition != null)
             return getPointInLine(lane.friend, max(lane.friend.friendPosition ?: 0.0, lane.friend.enemyPosition ?: 0.0) + MOVE_FORWARD)
         else {
             return getPointInLine(lane.friend, lane.friend.lineLength - START_POINT_POSITON)
