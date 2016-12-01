@@ -10,6 +10,10 @@ object MapHelper {
     lateinit var wizard: Wizard
     lateinit var findHelper: FindHelper
 
+    var lastCheckPointToMoveTick: Int = 0
+    var lastPointToMove: Point2D? = null
+    var lastLaneToMove: LaneType? = null
+
     fun nextTick(world: World, game: Game, wizard: Wizard) {
         this.game = game
         this.world = world
@@ -223,15 +227,24 @@ object MapHelper {
     }
 
     fun getLinePointToBaseEnemy(laneType: LaneType): Point2D {
+        if (world.tickIndex - lastCheckPointToMoveTick < CHANGE_POINT_TO_MOVE_MIN_TICK_DIFF
+                && lastPointToMove != null && lastLaneToMove == laneType)
+            return lastPointToMove!!
+
         val lane = attackLines[laneType]!!
 
-        if (lane.enemy.friendPosition != null)
-            return getPointInLine(lane.enemy, lane.enemy.friendPosition!! + MOVE_FORWARD)
+        lastCheckPointToMoveTick = world.tickIndex
+        lastLaneToMove = laneType
+
+        lastPointToMove = if (lane.enemy.friendPosition != null)
+            getPointInLine(lane.enemy, lane.enemy.friendPosition!! + MOVE_FORWARD)
         else if (lane.friend.friendPosition != 0.0 || lane.friend.enemyPosition != null)
-            return getPointInLine(lane.friend, max(lane.friend.friendPosition ?: 0.0, lane.friend.enemyPosition ?: 0.0) + MOVE_FORWARD)
+            getPointInLine(lane.friend, max(lane.friend.friendPosition ?: 0.0, lane.friend.enemyPosition ?: 0.0) + MOVE_FORWARD)
         else {
-            return getPointInLine(lane.friend, lane.friend.lineLength - START_POINT_POSITON)
+            getPointInLine(lane.friend, lane.friend.lineLength - START_POINT_POSITON)
         }
+
+        return lastPointToMove!!
     }
 
 
@@ -307,6 +320,8 @@ object MapHelper {
     val START_POINT_POSITON = 300.0
 
     val MOVE_FORWARD = 200.0
+
+    val CHANGE_POINT_TO_MOVE_MIN_TICK_DIFF: Int = 300
 
     var deadGuardTowers: MutableMap<Long, Building> = HashMap()
 }
