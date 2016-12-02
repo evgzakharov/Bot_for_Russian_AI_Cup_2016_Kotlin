@@ -55,7 +55,7 @@ class KillEnemyAction() : Action() {
         const val SPEED_FACTOR: Double = 0.9
         const val STAFF_FACTOR: Double = 2.0
 
-        const val MIN_HP_FACTOR: Double = 0.35
+        const val MIN_HP_FACTOR: Double = 0.45
         const val MIN_HP_MINION_FACTOR: Double = 0.35
     }
 }
