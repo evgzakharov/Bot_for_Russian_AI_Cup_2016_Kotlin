@@ -35,9 +35,7 @@ abstract class Action {
 
     open fun move(target: Any?): Boolean {
         val veryCloseTree = findHelper.getAllTrees()
-                .filter { tree -> abs(tree.x - self.x) <= self.radius + tree.radius + MIN_CLOSEST_DISTANCE }
-                .filter { tree -> abs(tree.y - self.y) <= self.radius + tree.radius + MIN_CLOSEST_DISTANCE }
-                .filter { tree -> self.getDistanceTo(tree) <= self.radius + tree.radius + MIN_CLOSEST_DISTANCE }
+                .filter { tree -> self.getDistanceTo(tree) <= self.radius * 2 + tree.radius  }
                 .minBy { abs(self.getAngleTo(it)) }
 
         veryCloseTree?.let { tree -> shootHelder.shootToTarget(veryCloseTree) }
@@ -172,7 +170,7 @@ abstract class Action {
         val MIN_DISTANCE_TO_TOWER_FACTOR = 0.7
         val MIN_BASE_DISTANCE_FACTOR = 0.5
 
-        val MIN_CLOSEST_DISTANCE = 5.0
+        val MIN_CLOSEST_DISTANCE = 25.0
 
         val FETISH_CLOSE_MULTIPLIER = 1.2
         val ORC_CLOSE_MULTIPLIER = 3.0

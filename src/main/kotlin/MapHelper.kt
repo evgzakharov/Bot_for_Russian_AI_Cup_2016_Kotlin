@@ -102,15 +102,9 @@ object MapHelper {
                 if (findHelper.isEnemy(wizard.faction, someWizard)) {
                     wizardLine.enemyWizardPositions.put(wizardId, linePosition.position)
                     wizardLine.historyEnemyWizardPositions.put(wizardId, HistoryValue(world.tickIndex, linePosition.position))
-
-                    if (wizardLine.enemyPosition == null || wizardLine.enemyPosition!! > linePosition.position)
-                        wizardLine.enemyPosition = linePosition.position
                 } else {
                     wizardLine.friendWizardPositions.put(wizardId, linePosition.position)
                     wizardLine.historyFriendWizardPositions.put(wizardId, HistoryValue(world.tickIndex, linePosition.position))
-
-                    if (wizardLine.friendPosition == null || wizardLine.friendPosition!! < linePosition.position)
-                        wizardLine.friendPosition = linePosition.position
                 }
             }
         }

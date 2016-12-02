@@ -230,7 +230,8 @@ class MapWayFinder(val world: World, val game: Game, private val wizard: Wizard)
 
         val MIN_TICK_DIFF_TO_FIND_POINT = 50
 
-        val NEXT_LINE_DISTANCE: Double = 200.0
+        val NEXT_LINE_DISTANCE: Double = 150.0
+
         val WAY_FINDER_DISTANCE = 150.0
 
         val NEXT_LINE_DISTANCE_MULTIPLIER = 1.1

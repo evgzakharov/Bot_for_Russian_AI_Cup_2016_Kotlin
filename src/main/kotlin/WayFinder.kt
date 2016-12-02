@@ -1,6 +1,7 @@
 import model.*
 
 import java.lang.StrictMath.abs
+import java.lang.StrictMath.max
 import java.util.*
 
 class WayFinder(private val wizard: Wizard, private val world: World, private val game: Game) {
@@ -19,7 +20,9 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
 
         val allMovingUnits = findHelper.getAllMovingUnits(onlyEnemy = false, onlyNearest = true, withNeutrals = true)
         val allBuildings = findHelper.getAllBuldings(onlyEnemy = false)
-        val allTrees = findHelper.getAllTrees()
+        val allTrees = findHelper.getAllTrees().filter {
+            max(abs(it.x - wizard.x), abs(it.y - wizard.y)) < MAX_RANGE
+        }
 
         val findLine = growMatrix(listOf(matrixStart), point, allMovingUnits, allBuildings, allTrees)
 
@@ -54,7 +57,7 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
                     val newY = stepMatrix.point.y + matrixStep * diffY * distanceMultiplier
                     val newPoint = Point2D(newX, newY)
 
-                    val freeLocation = freeLocation(newPoint, allTrees)
+                    val freeLocation = freeLocation(newPoint, allTrees, distanceMultiplier)
                     val treeMultiplier = if (!freeLocation.second)
                         if (freeLocation.first!!.radius < MINIMUM_TREE_RADIUS) TREE_MULTIPLIER_FACTOR_SMALL_TREE
                         else TREE_MULTIPLIER_FACTOR_BIG_TREE
@@ -64,7 +67,7 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
 
                     val newPathCount = (stepMatrix.pathCount + step * distanceMultiplier * treeMultiplier).toFloat()
 
-                    if (newPathCount > TREE_MULTIPLIER_FACTOR_BIG_TREE * MAX_TREE_COUNT)
+                    if (newPathCount > TREE_MULTIPLIER_FACTOR_BIG_TREE)
                         continue
 
                     if (stepMatrix.matrixPoints!!.keys.contains(matrixPoint)) {
@@ -75,8 +78,8 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
 
                     if (!checkPointPosition(newPoint)) continue
 
-                    if (!freeLocation(newPoint, allMovingUnits).second) continue
-                    if (!freeLocation(newPoint, allBuildings).second) continue
+                    if (!freeLocation(newPoint, allMovingUnits, distanceMultiplier).second) continue
+                    if (!freeLocation(newPoint, allBuildings, distanceMultiplier).second) continue
 
                     val newMatrix = Matrix(newPoint, matrixPoint, stepMatrix)
 
@@ -107,17 +110,18 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
         return emptyList()
     }
 
-    private fun freeLocation(newPoint: Point2D, units: List<LivingUnit>): Pair<LivingUnit?, Boolean> {
+    private fun freeLocation(newPoint: Point2D, units: List<LivingUnit>, multiply: Double): Pair<LivingUnit?, Boolean> {
         var closestUnit: LivingUnit? = null
+        val wizardRadius =  wizard.radius * multiply
 
         val isFree = units
-                .filter { unit -> isFractionBase(unit) || abs(unit.x - newPoint.x) <= unit.radius + wizard.radius + MIN_CLOSEST_RANGE_FOR_DISTANCE }
-                .filter { unit -> isFractionBase(unit) || abs(unit.x - newPoint.x) <= unit.radius + wizard.radius + MIN_CLOSEST_RANGE_FOR_DISTANCE }
+                .filter { unit -> isFractionBase(unit) || abs(unit.x - newPoint.x) <= unit.radius + wizardRadius + MIN_CLOSEST_RANGE_FOR_DISTANCE }
+                .filter { unit -> isFractionBase(unit) || abs(unit.x - newPoint.x) <= unit.radius + wizardRadius + MIN_CLOSEST_RANGE_FOR_DISTANCE }
                 .filter { unit -> abs(unit.x - newPoint.x) < MAX_RANGE }
                 .filter { unit -> abs(unit.y - newPoint.y) < MAX_RANGE }
                 .none { unit ->
                     closestUnit = unit
-                    newPoint.getDistanceTo(unit) <= getUnitDistance(unit) + wizard.radius + MIN_CLOSEST_RANGE
+                    newPoint.getDistanceTo(unit) <= getUnitDistance(unit) + wizardRadius + MIN_CLOSEST_RANGE
                 }
 
         return closestUnit to isFree
@@ -169,19 +173,19 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
 
         private val MAX_RANGE = 150.0
 
-        private val WIZARD_RADIUS_FACTOR: Double = 0.9
+        private val WIZARD_RADIUS_FACTOR: Double = 1.0
 
         private val MIN_CLOSEST_RANGE = 5.0
 
         private val MIN_CLOSEST_RANGE_FOR_DISTANCE = 5.0
 
-        private val MULTIPLIER_FACTOR_DIFF = 4
-        private val MULTIPLIER_FACTOR_DIFF_V2 = 8
+        private val MULTIPLIER_FACTOR_DIFF = 3
+        private val MULTIPLIER_FACTOR_DIFF_V2 = 6
 
-        private val MULTIPLIER_FACTOR = 4.0
-        private val MULTIPLIER_FACTOR_V2 = 10.0
+        private val MULTIPLIER_FACTOR = 2.0
+        private val MULTIPLIER_FACTOR_V2 = 6.0
 
-        private val MINIMUM_TREE_RADIUS: Double = 28.0
+        private val MINIMUM_TREE_RADIUS: Double = 15.0
         private val TREE_MULTIPLIER_FACTOR_SMALL_TREE = 5.0
         private val TREE_MULTIPLIER_FACTOR_BIG_TREE = 15.0
 

@@ -11,7 +11,7 @@ class KillEnemyAction() : Action() {
         shootHelder.shootToTarget(target)
         moveToEnemy(target)
 
-        return super.move(null)
+        return true
     }
 
     private fun wizardIsNotClose(target: Wizard): Boolean {

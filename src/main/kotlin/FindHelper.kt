@@ -57,8 +57,8 @@ class FindHelper(private val world: World, private val game: Game, private val w
 
     private fun filterLivingUnits(unit: LivingUnit, onlyEnemy: Boolean, onlyNearest: Boolean, withNeutrals: Boolean = false): Boolean {
         return !onlyEnemy || isEnemy(wizard.faction, unit) || (unit.faction == Faction.NEUTRAL && withNeutrals)
-                && (!onlyNearest || abs(unit.x - wizard.x) < game.wizardCastRange * 3)
-                && (!onlyNearest || abs(unit.y - wizard.y) < game.wizardCastRange * 3)
+                && (!onlyNearest || abs(unit.x - wizard.x) < game.wizardCastRange * 2)
+                && (!onlyNearest || abs(unit.y - wizard.y) < game.wizardCastRange * 2)
     }
 
     fun getAllBuldings(onlyEnemy: Boolean): List<Building> {
