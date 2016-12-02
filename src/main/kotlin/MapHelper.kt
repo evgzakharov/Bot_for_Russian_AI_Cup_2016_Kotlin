@@ -90,7 +90,7 @@ object MapHelper {
     }
 
     private fun updateWizardPositions() {
-        val allWizards = findHelper.getAllWizards(false, false) + wizard
+        val allWizards = (findHelper.getAllWizards(false, false) + wizard).toSet()
 
         allWizards.forEach { someWizard ->
             val linePositions = getLinePositions(someWizard, 1.0)

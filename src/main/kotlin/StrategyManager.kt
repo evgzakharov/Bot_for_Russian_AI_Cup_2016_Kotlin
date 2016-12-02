@@ -81,6 +81,10 @@ class StrategyManager {
         } else {
             globalStrateg = GlobalStrateg.DEFENCE
 
+            if (world.tickIndex < MIN_START_CHANGE_TICK) return
+
+            if (world.tickIndex - lastLaneDefenceChangeTick <= MIN_CHANGE_DEFENCE_TICK_LIMIT) return
+
             lastLaneDefenceChangeTick = world.tickIndex
             currentLaneType = needDefenceLine
         }
@@ -91,7 +95,7 @@ class StrategyManager {
 
         val selfSkils = self.getSkills().toList()
 
-        val skillsToLearn = skillesToLearnFrost
+        val skillsToLearn = skillesToLearnFire
                 .filter { selfSkils.isEmpty() || !selfSkils.contains(it) }
                 .first()
 
@@ -174,12 +178,6 @@ class StrategyManager {
     }
 
     private fun laneDefenceDecision(): LaneType? {
-        if (world.tickIndex < MIN_START_CHANGE_TICK)
-            return null
-
-        if (world.tickIndex - lastLaneDefenceChangeTick <= MIN_CHANGE_DEFENCE_TICK_LIMIT)
-            return null
-
         val defenceLine = mapLines
                 .filter { line ->
                     line.enemy == false &&
@@ -220,10 +218,9 @@ class StrategyManager {
         val lineWithoutFriendWizards = attackLines
                 .mapValues { attackLine -> attackLine.value.friendWizards() }
                 .filter { it.value.isEmpty() }.keys
-                .firstOrNull()
 
-        if (lineWithoutFriendWizards != null)
-            return lineWithoutFriendWizards
+        if (lineWithoutFriendWizards.isNotEmpty() && attackLines[currentLaneType!!]!!.friendWizards().size > 1)
+            return lineWithoutFriendWizards.firstOrNull()
 
 
         //or attack line, there are friend wizards less when enemy wizards
