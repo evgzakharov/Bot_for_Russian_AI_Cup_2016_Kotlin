@@ -172,7 +172,10 @@ class MapWayFinder(val world: World, val game: Game, private val wizard: Wizard)
                             return@filter checkedMapLine.enemyWizardPositions.values
                                     .all { position ->
                                         linePosition.position < position
-                                    }
+                                    } || ((checkedMapLine.startPoint == friendBasePoint) && checkedMapLine.enemyWizardPositions.values
+                                    .all { position ->
+                                        linePosition.position < position || position < checkedMapLine.lineLength * BASE_POINT_POSITION_FACTOR
+                                    })
                         else
                             return@filter checkedMapLine.enemyWizardPositions.values
                                     .all { position ->
@@ -234,7 +237,7 @@ class MapWayFinder(val world: World, val game: Game, private val wizard: Wizard)
 
         val NEXT_LINE_DISTANCE_MULTIPLIER = 1.1
 
-        val BASE_POINT_POSITION_FACTOR: Double = 0.5
+        val BASE_POINT_POSITION_FACTOR: Double = 0.3
 
         val MAX_SAFE_DISTANCE: Double = 1000.0
     }
