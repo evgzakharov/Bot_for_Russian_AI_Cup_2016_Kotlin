@@ -3,13 +3,14 @@ import MapHelper.getLinePointToBaseEnemy
 import MapHelper.getLinePositions
 import MapHelper.getNearestPointInLine
 import MapHelper.getPointInLine
+import WayFinder.Companion.MAX_RANGE
 import model.Game
 import model.LaneType
 import model.Wizard
 import model.World
 import java.util.*
 
-class MapWayFinder(world: World, game: Game, private val wizard: Wizard) {
+class MapWayFinder(val world: World, val game: Game, private val wizard: Wizard) {
 
     fun getNextWaypoint(laneType: LaneType): Point2D {
         val wizardOnLine = getLinePositions(wizard, 1.0)
@@ -19,16 +20,25 @@ class MapWayFinder(world: World, game: Game, private val wizard: Wizard) {
 
         val pointToMove = getPointTo(linePointToBaseEnemy, wizardOnLine.isNotEmpty(), null)
 
-        return if (wizard.getDistanceTo(pointToMove) > POINT_IS_CLOSE) {
-            getPointTo(linePointToBaseEnemy, wizardOnLine.isEmpty(), pointToMove)
+        return if (wizard.getDistanceTo(pointToMove) > MAX_RANGE) {
+            getPointTo(linePointToBaseEnemy, wizardOnLine.isEmpty(), correctPoint(pointToMove))
         } else
             pointToMove
+    }
+
+    private fun correctPoint(point: Point2D): Point2D {
+        if (world.tickIndex - lastNextCheck >= MIN_TICK_DIFF_TO_FIND_POINT || previousNextPoint == null) {
+            lastNextCheck = world.tickIndex
+            previousNextPoint = point
+        }
+
+        return previousNextPoint!!
     }
 
     fun getPreviousWaypoint(laneType: LaneType): Point2D {
         val pointToMove = getPointTo(friendBasePoint, true, null)
 
-        return if (wizard.getDistanceTo(pointToMove) < POINT_IS_CLOSE) {
+        return if (wizard.getDistanceTo(pointToMove) < MAX_RANGE) {
             getPointTo(friendBasePoint, true, pointToMove)
         } else
             pointToMove
@@ -39,7 +49,7 @@ class MapWayFinder(world: World, game: Game, private val wizard: Wizard) {
         if (!safeWay)
             return getSafePointTo(point, safeWay, nextWizardPoint)!!
 
-        return getSafePointTo(point, safeWay, nextWizardPoint)?: getSafePointTo(point, false, nextWizardPoint)!!
+        return getSafePointTo(point, safeWay, nextWizardPoint) ?: getSafePointTo(point, false, nextWizardPoint)!!
     }
 
     fun getSafePointTo(point: Point2D, safeWay: Boolean, nextWizardPoint: Point2D?): Point2D? {
@@ -63,6 +73,9 @@ class MapWayFinder(world: World, game: Game, private val wizard: Wizard) {
                     if (wizardLine == linePosition.mapLine) {
                         if (safeWay) {
                             if (wizardLine.enemyWizardPositions.isEmpty())
+                                return getPointInLine(linePosition)
+
+                            if (wizardLine.startPoint == friendBasePoint && position < wizardLine.lineLength * BASE_POINT_POSITION_FACTOR)
                                 return getPointInLine(linePosition)
 
                             val isSafeWay = wizardLine.enemyWizardPositions.values
@@ -163,7 +176,10 @@ class MapWayFinder(world: World, game: Game, private val wizard: Wizard) {
                             return@filter checkedMapLine.enemyWizardPositions.values
                                     .all { position ->
                                         linePosition.position > position
-                                    }
+                                    } || ((checkedMapLine.startPoint == friendBasePoint) && checkedMapLine.enemyWizardPositions.values
+                                    .all { position ->
+                                        linePosition.position > position || position < checkedMapLine.lineLength * BASE_POINT_POSITION_FACTOR
+                                    })
                     } else
                         false
                 }.firstOrNull()
@@ -204,12 +220,17 @@ class MapWayFinder(world: World, game: Game, private val wizard: Wizard) {
 
     companion object {
 
+        var previousNextPoint: Point2D? = null
+        var lastNextCheck: Int = 0
+
+        val MIN_TICK_DIFF_TO_FIND_POINT = 150
+
         val NEXT_LINE_DISTANCE: Double = 350.0
         val WAY_FINDER_DISTANCE = 150.0
 
         val NEXT_LINE_DISTANCE_MULTIPLIER = 1.1
 
-        val POINT_IS_CLOSE: Double = 30.0
+        val BASE_POINT_POSITION_FACTOR: Double = 0.5
     }
 
 

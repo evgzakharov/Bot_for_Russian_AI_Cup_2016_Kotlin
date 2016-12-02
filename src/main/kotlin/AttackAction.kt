@@ -7,41 +7,38 @@ import java.util.Optional
 
 class AttackAction : Action() {
     override fun move(target: Any?): Boolean {
+        var shootToTarget: Boolean = false
+
         if (self.life < self.maxLife * Action.Companion.LOW_HP_FACTOR) {
             safeHelper.tryToSafeByShield(self)
 
             moveHelper.goTo(mapWayFinder.getPreviousWaypoint(strategyManager.laneType!!))
-            return true
-        }
-
-        val nearestTarget = findHelper.getNearestTarget()
-
-        val nextWaypoint: Point2D?
-        if (isNeedToMoveBack()) {
-            moveHelper.goWithoutTurn(mapWayFinder.getPreviousWaypoint(strategyManager.laneType!!))
-
-            nearestTarget?.let { livingUnit -> shootHelder.shootToTarget(livingUnit) }
-
-            return true
         } else {
-            nextWaypoint = mapWayFinder.getNextWaypoint(strategyManager.laneType!!)
-            moveHelper.goWithoutTurn(nextWaypoint)
+            val nearestTarget = findHelper.getNearestTarget()
 
-            if (nearestTarget != null) {
-                shootHelder.shootToTarget(nearestTarget)
-                return true
+            val nextWaypoint: Point2D?
+            if (isNeedToMoveBack()) {
+                moveHelper.goWithoutTurn(mapWayFinder.getPreviousWaypoint(strategyManager.laneType!!))
+
+                nearestTarget?.let { livingUnit ->
+                    shootToTarget = true
+                    shootHelder.shootToTarget(livingUnit)
+                }
+            } else {
+                nextWaypoint = mapWayFinder.getNextWaypoint(strategyManager.laneType!!)
+                moveHelper.goWithoutTurn(nextWaypoint)
+
+                if (nearestTarget != null) {
+                    shootToTarget = true
+                    shootHelder.shootToTarget(nearestTarget)
+                } else
+                    moveHelper.goTo(nextWaypoint)
             }
         }
 
-        moveHelper.goTo(nextWaypoint)
+        if (!shootToTarget)
+            super.move(null)
 
-        val nearestTree = findHelper.getAllTrees()
-                .filter { tree -> self.getAngleTo(tree) < game.staffSector }
-                .filter { tree -> self.getDistanceTo(tree) < self.radius + tree.radius + Action.Companion.MIN_CLOSEST_DISTANCE }
-                .firstOrNull()
-
-        nearestTree?.let { tree -> move.action = ActionType.STAFF }
-
-        return super.move(null)
+        return true
     }
 }

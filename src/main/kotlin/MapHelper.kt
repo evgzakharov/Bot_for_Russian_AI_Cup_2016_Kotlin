@@ -238,8 +238,11 @@ object MapHelper {
 
         lastPointToMove = if (lane.enemy.friendPosition != null)
             getPointInLine(lane.enemy, lane.enemy.friendPosition!! + MOVE_FORWARD)
-        else if (lane.friend.friendPosition != 0.0 || lane.friend.enemyPosition != null)
-            getPointInLine(lane.friend, max(lane.friend.friendPosition ?: 0.0, lane.friend.enemyPosition ?: 0.0) + MOVE_FORWARD)
+        else if (lane.friend.friendPosition != 0.0)
+            if (lane.friend.friendPosition!! < lane.friend.lineLength * LINE_BACK_FACTOR)
+                getPointInLine(lane.friend, lane.friend.enemyPosition ?: lane.friend.friendPosition!!)
+            else
+                getPointInLine(lane.friend, max(lane.friend.friendPosition ?: 0.0, lane.friend.enemyPosition ?: 0.0) + MOVE_FORWARD)
         else {
             getPointInLine(lane.friend, lane.friend.lineLength - START_POINT_POSITON)
         }
@@ -320,6 +323,8 @@ object MapHelper {
     val START_POINT_POSITON = 300.0
 
     val MOVE_FORWARD = 200.0
+
+    val LINE_BACK_FACTOR: Double = 0.5
 
     val CHANGE_POINT_TO_MOVE_MIN_TICK_DIFF: Int = 50
 

@@ -7,8 +7,11 @@ import java.lang.StrictMath.abs
 
 data class BonusTimeCatch(var lastCatchTick: Int = 0)
 
-class StrategyManager {
+enum class GlobalStrateg {
+    DEFENCE, ATTACK
+}
 
+class StrategyManager {
     lateinit var self: Wizard
     lateinit var world: World
     lateinit var game: Game
@@ -23,6 +26,8 @@ class StrategyManager {
 
     var laneType: LaneType? = null
     var lastLaneChangeTick: Int = 0
+
+    var globalStrateg = GlobalStrateg.ATTACK
 
     private var gameManagers: MutableMap<ActionMode, Action> = mutableMapOf()
 
@@ -52,8 +57,15 @@ class StrategyManager {
             updateBonusInfo()
             actionDecision()
 
-            val laneDecision = laneDecision()
-            updateInfo(laneDecision)
+            val needDefence = laneDefenceDecision()
+            if (!needDefence) {
+                globalStrateg = GlobalStrateg.ATTACK
+
+                val attack = laneAttackDecision()
+                if (attack) updateInfo(attack)
+            } else {
+                globalStrateg = GlobalStrateg.DEFENCE
+            }
 
             action()
         } catch (e: Throwable) {
@@ -66,7 +78,7 @@ class StrategyManager {
 
         val selfSkils = self.getSkills().toList()
 
-        val skillsToLearn = skillesToLearn
+        val skillsToLearn = skillesToLearnFrost
                 .filter { selfSkils.isEmpty() || !selfSkils.contains(it) }
                 .first()
 
@@ -78,7 +90,10 @@ class StrategyManager {
     }
 
     private fun action() {
-        val moveSuccess = movingTarget?.let { move(it) } ?: false
+        val moveSuccess = if (globalStrateg == GlobalStrateg.ATTACK) {
+            movingTarget?.let { move(it) } ?: false
+        } else false
+
         if (!moveSuccess) {
             actionMode = defaulActionMode
             movingTarget = null
@@ -151,16 +166,22 @@ class StrategyManager {
         }
     }
 
-    private fun laneDecision(): Boolean {
+    private fun laneDefenceDecision(): Boolean {
         //defence
-        val friendMostKillingLine = mapLines.shouldChangeLine(sortByEnemyTowers = false) {
-            it.enemy == false &&
-                    ((it.deadFriendTowerCount >= 1 && it.enemyWizardPositions.isNotEmpty() && it.friendWizardsOnLine() == 0)
-                            || (it.deadFriendTowerCount == 2 && it.enemyWizardPositions.isNotEmpty()))
+        val friendMostKillingLine = mapLines.shouldChangeLine(sortByEnemyTowers = false) { line ->
+            line.enemy == false &&
+                    ((line.deadFriendTowerCount >= 1
+                            && line.enemyWizardPositions.isNotEmpty()
+                            && (line.friendWizardPositions.values.all { it < line.lineLength * LINE_MIN_FACTOR } || line.friendWizardPositions.isEmpty()))
+                            || (line.deadFriendTowerCount == 2 && line.enemyWizardPositions.isNotEmpty()))
         }
         if (friendMostKillingLine)
             return true
 
+        return true
+    }
+
+    private fun laneAttackDecision(): Boolean {
         if (world.tickIndex < MIN_START_CHANGE_TICK)
             return false
 
@@ -227,7 +248,7 @@ class StrategyManager {
         const val MY_HP_MULTIPLIER: Double = 0.8
         const val TRY_TO_KILL_ENEMY_RADIUS: Double = 500.0
 
-        const val TRY_TO_CATCH_ARTIFACT_DISTANCE: Double = 600.0
+        const val TRY_TO_CATCH_ARTIFACT_DISTANCE: Double = 150.0
         const val TRY_TO_CATCH_ARTIFACT_DISTANCE2: Double = 1500.0
 
         const val BONUS_UPDATE_TICK: Int = 2500
@@ -237,7 +258,9 @@ class StrategyManager {
 
         const val LINE_POSITION_MULTIPLIER: Double = 0.2
 
-        val skillesToLearn: List<SkillType> = listOf(
+        const val LINE_MIN_FACTOR: Double = 0.3
+
+        val skillesToLearnFrost: List<SkillType> = listOf(
                 SkillType.MAGICAL_DAMAGE_BONUS_PASSIVE_1,
                 SkillType.MAGICAL_DAMAGE_BONUS_AURA_1,
                 SkillType.MAGICAL_DAMAGE_BONUS_PASSIVE_2,
@@ -253,6 +276,62 @@ class StrategyManager {
                 SkillType.MAGICAL_DAMAGE_ABSORPTION_PASSIVE_2,
                 SkillType.MAGICAL_DAMAGE_ABSORPTION_AURA_2,
                 SkillType.SHIELD,
+                SkillType.MOVEMENT_BONUS_FACTOR_PASSIVE_1,
+                SkillType.MOVEMENT_BONUS_FACTOR_AURA_1,
+                SkillType.MOVEMENT_BONUS_FACTOR_PASSIVE_2,
+                SkillType.MOVEMENT_BONUS_FACTOR_AURA_2,
+                SkillType.RANGE_BONUS_PASSIVE_1,
+                SkillType.RANGE_BONUS_AURA_1,
+                SkillType.RANGE_BONUS_PASSIVE_2,
+                SkillType.RANGE_BONUS_AURA_2,
+                SkillType.ADVANCED_MAGIC_MISSILE,
+                SkillType.HASTE
+        )
+
+        val skillesToLearnFire: List<SkillType> = listOf(
+                SkillType.STAFF_DAMAGE_BONUS_PASSIVE_1,
+                SkillType.STAFF_DAMAGE_BONUS_AURA_1,
+                SkillType.STAFF_DAMAGE_BONUS_PASSIVE_2,
+                SkillType.STAFF_DAMAGE_BONUS_AURA_2,
+                SkillType.FIREBALL,
+                SkillType.MAGICAL_DAMAGE_BONUS_PASSIVE_1,
+                SkillType.MAGICAL_DAMAGE_BONUS_AURA_1,
+                SkillType.MAGICAL_DAMAGE_BONUS_PASSIVE_2,
+                SkillType.MAGICAL_DAMAGE_BONUS_AURA_2,
+                SkillType.FROST_BOLT,
+                SkillType.MAGICAL_DAMAGE_ABSORPTION_PASSIVE_1,
+                SkillType.MAGICAL_DAMAGE_ABSORPTION_AURA_1,
+                SkillType.MAGICAL_DAMAGE_ABSORPTION_PASSIVE_2,
+                SkillType.MAGICAL_DAMAGE_ABSORPTION_AURA_2,
+                SkillType.SHIELD,
+                SkillType.MOVEMENT_BONUS_FACTOR_PASSIVE_1,
+                SkillType.MOVEMENT_BONUS_FACTOR_AURA_1,
+                SkillType.MOVEMENT_BONUS_FACTOR_PASSIVE_2,
+                SkillType.MOVEMENT_BONUS_FACTOR_AURA_2,
+                SkillType.RANGE_BONUS_PASSIVE_1,
+                SkillType.RANGE_BONUS_AURA_1,
+                SkillType.RANGE_BONUS_PASSIVE_2,
+                SkillType.RANGE_BONUS_AURA_2,
+                SkillType.ADVANCED_MAGIC_MISSILE,
+                SkillType.HASTE
+        )
+
+        val skillesToLearnShield: List<SkillType> = listOf(
+                SkillType.MAGICAL_DAMAGE_ABSORPTION_PASSIVE_1,
+                SkillType.MAGICAL_DAMAGE_ABSORPTION_AURA_1,
+                SkillType.MAGICAL_DAMAGE_ABSORPTION_PASSIVE_2,
+                SkillType.MAGICAL_DAMAGE_ABSORPTION_AURA_2,
+                SkillType.SHIELD,
+                SkillType.STAFF_DAMAGE_BONUS_PASSIVE_1,
+                SkillType.STAFF_DAMAGE_BONUS_AURA_1,
+                SkillType.STAFF_DAMAGE_BONUS_PASSIVE_2,
+                SkillType.STAFF_DAMAGE_BONUS_AURA_2,
+                SkillType.FIREBALL,
+                SkillType.MAGICAL_DAMAGE_BONUS_PASSIVE_1,
+                SkillType.MAGICAL_DAMAGE_BONUS_AURA_1,
+                SkillType.MAGICAL_DAMAGE_BONUS_PASSIVE_2,
+                SkillType.MAGICAL_DAMAGE_BONUS_AURA_2,
+                SkillType.FROST_BOLT,
                 SkillType.MOVEMENT_BONUS_FACTOR_PASSIVE_1,
                 SkillType.MOVEMENT_BONUS_FACTOR_AURA_1,
                 SkillType.MOVEMENT_BONUS_FACTOR_PASSIVE_2,

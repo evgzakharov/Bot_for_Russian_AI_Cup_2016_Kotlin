@@ -111,19 +111,11 @@ class FindHelper(private val world: World, private val game: Game, private val w
 
         if (nearestBuilding != null) return nearestBuilding
 
-        val nearestFetish = getNearestTarget(findHelper.getAllMinions(onlyEnemy = true, onlyNearest = true), minionType = MinionType.FETISH_BLOWDART)
+        val nearestMinion = getNearestTarget(findHelper.getAllMinions(onlyEnemy = true, onlyNearest = true))
 
-        val nearestOrc = getNearestTarget(findHelper.getAllMinions(onlyEnemy = true, onlyNearest = true), minionType = MinionType.ORC_WOODCUTTER)
+        if (nearestMinion != null) return nearestMinion
 
-        val minionWithMinimumHp = listOf(nearestFetish, nearestOrc)
-                .filterNotNull()
-                .find { it.life < it.maxLife * MIN_MINION_LIFE_FACTOR }
-
-        if (minionWithMinimumHp != null) return minionWithMinimumHp
-
-        else return listOf(nearestFetish, nearestOrc)
-                .filterNotNull()
-                .firstOrNull()
+        return null
     }
 
     fun getNearestTarget(targets: List<LivingUnit>, minionType: MinionType? = null): LivingUnit? {
@@ -132,12 +124,12 @@ class FindHelper(private val world: World, private val game: Game, private val w
         for (target in targets) {
             if (minionType != null && target is Minion && target.type != minionType) continue
 
-            if (abs(wizard.x - target.x) > game.wizardCastRange * 2) continue
-            if (abs(wizard.y - target.y) > game.wizardCastRange * 2) continue
+            if (abs(wizard.x - target.x) > game.wizardCastRange * CAST_RANGE_FACTOR) continue
+            if (abs(wizard.y - target.y) > game.wizardCastRange * CAST_RANGE_FACTOR) continue
 
             val distance = wizard.getDistanceTo(target)
 
-            if (distance < wizard.castRange) {
+            if (distance <= wizard.castRange) {
                 nearestTargets.add(target)
             }
         }
@@ -164,6 +156,6 @@ class FindHelper(private val world: World, private val game: Game, private val w
             allTrees = null
         }
 
-        val MIN_MINION_LIFE_FACTOR: Double = 0.3
+        val CAST_RANGE_FACTOR: Double = 1.3
     }
 }
