@@ -34,20 +34,11 @@ abstract class Action {
     }
 
     open fun move(target: Any?): Boolean {
-        val nearestTree = findHelper.getAllTrees()
-                .filter { tree -> abs(self.getAngleTo(tree)) < PI / 2 }
-                .filter { tree -> self.getDistanceTo(tree) <= self.radius + tree.radius + MIN_CLOSEST_TREE_DISTANCE }
-                .firstOrNull()
+        val veryCloseTree = findHelper.getAllTrees()
+                .filter { tree -> self.getDistanceTo(tree) <= self.radius + tree.radius + MIN_CLOSEST_DISTANCE }
+                .minBy { abs(self.getAngleTo(it)) }
 
-        nearestTree?.let { tree -> shootHelder.shootToTarget(tree) }
-
-        if (nearestTree == null) {
-            val veryCloseTree = findHelper.getAllTrees()
-                    .filter { tree -> self.getDistanceTo(tree) <= self.radius + tree.radius + MIN_CLOSEST_DISTANCE }
-                    .firstOrNull()
-
-            veryCloseTree?.let { tree -> shootHelder.shootToTarget(veryCloseTree) }
-        }
+        veryCloseTree?.let { tree -> shootHelder.shootToTarget(veryCloseTree) }
 
         return true
     }

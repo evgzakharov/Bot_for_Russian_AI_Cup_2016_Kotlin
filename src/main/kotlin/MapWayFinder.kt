@@ -18,10 +18,12 @@ class MapWayFinder(val world: World, val game: Game, private val wizard: Wizard)
 
         val linePointToBaseEnemy = getLinePointToBaseEnemy(laneType)
 
-        val pointToMove = getPointTo(linePointToBaseEnemy, wizardOnLine.isNotEmpty(), null)
+        val safeWay = wizardOnLine.isEmpty() || wizard.getDistanceTo(linePointToBaseEnemy) > MAX_SAFE_DISTANCE
 
-        return if (wizard.getDistanceTo(pointToMove) > MAX_RANGE) {
-            getPointTo(linePointToBaseEnemy, wizardOnLine.isEmpty(), correctPoint(pointToMove))
+        val pointToMove = getPointTo(linePointToBaseEnemy, safeWay, null)
+
+        return if (wizard.getDistanceTo(pointToMove) > MAX_SELF_WAY_RANGE) {
+            getPointTo(linePointToBaseEnemy, safeWay, correctPoint(pointToMove))
         } else
             pointToMove
     }
@@ -223,14 +225,18 @@ class MapWayFinder(val world: World, val game: Game, private val wizard: Wizard)
         var previousNextPoint: Point2D? = null
         var lastNextCheck: Int = 0
 
-        val MIN_TICK_DIFF_TO_FIND_POINT = 150
+        val MAX_SELF_WAY_RANGE = 150
 
-        val NEXT_LINE_DISTANCE: Double = 350.0
+        val MIN_TICK_DIFF_TO_FIND_POINT = 50
+
+        val NEXT_LINE_DISTANCE: Double = 200.0
         val WAY_FINDER_DISTANCE = 150.0
 
         val NEXT_LINE_DISTANCE_MULTIPLIER = 1.1
 
         val BASE_POINT_POSITION_FACTOR: Double = 0.5
+
+        val MAX_SAFE_DISTANCE: Double = 1000.0
     }
 
 

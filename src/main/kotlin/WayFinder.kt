@@ -125,7 +125,7 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
 
     private fun getUnitDistance(unit: LivingUnit): Double {
         if (isFractionBase(unit)) {
-            return unit.radius + MIN_CLOSEST_RANGE * 5
+            return unit.radius + MIN_CLOSEST_RANGE * 10
         }
 
         return unit.radius
@@ -167,7 +167,7 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
 
     companion object {
 
-        val MAX_RANGE = 250.0
+        val MAX_RANGE = 150.0
 
         private val WIZARD_RADIUS_FACTOR: Double = 0.9
 

@@ -81,10 +81,8 @@ class StrategyManager {
         } else {
             globalStrateg = GlobalStrateg.DEFENCE
 
-            if (needDefenceLine != this.currentLaneType) {
-                lastLaneDefenceChangeTick = world.tickIndex
-                currentLaneType = needDefenceLine
-            }
+            lastLaneDefenceChangeTick = world.tickIndex
+            currentLaneType = needDefenceLine
         }
     }
 
