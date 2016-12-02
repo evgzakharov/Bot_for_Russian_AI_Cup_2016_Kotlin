@@ -1,6 +1,5 @@
 import model.*
-
-import java.lang.StrictMath.abs
+import java.lang.StrictMath.*
 
 class ShootHelper(private val self: Wizard, private val game: Game, private val move: Move) {
 
@@ -37,7 +36,7 @@ class ShootHelper(private val self: Wizard, private val game: Game, private val 
             }
 
             move.castAngle = angle
-            move.minCastDistance = distance - nearestTarget.radius + missleRadius
+            move.minCastDistance = max(distance - nearestTarget.radius + missleRadius, self.radius + MIN_CAST_RANGE)
         }
     }
 
@@ -74,5 +73,7 @@ class ShootHelper(private val self: Wizard, private val game: Game, private val 
 
     companion object {
         val MIN_MANA_FACTOR: Double = 0.5
+
+        val MIN_CAST_RANGE: Double = 1.0
     }
 }

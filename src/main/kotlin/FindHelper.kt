@@ -87,6 +87,19 @@ class FindHelper(private val world: World, private val game: Game, private val w
         return newUnits
     }
 
+    fun getAllMovingNeutrals(): List<Minion> {
+        if (allMovingNeutrals != null) return allMovingNeutrals!!
+
+        val neutrals = world.getMinions()
+                .filter { filterLivingUnits(it, onlyEnemy = false, onlyNearest = true, withNeutrals = true) }
+                .filter { it.faction == Faction.NEUTRAL }
+                .filter { it.speedX > 0 || it.speedY > 0 }
+
+        allMovingNeutrals = neutrals
+
+        return neutrals
+    }
+
     fun getAllTrees(): List<Tree> {
         if (allTrees != null) return allTrees!!
 
@@ -114,6 +127,10 @@ class FindHelper(private val world: World, private val game: Game, private val w
         val nearestMinion = getNearestTarget(findHelper.getAllMinions(onlyEnemy = true, onlyNearest = true))
 
         if (nearestMinion != null) return nearestMinion
+
+        val nearestMovingNeutrals = getNearestTarget(getAllMovingNeutrals())
+
+        if (nearestMovingNeutrals!=null) return nearestMovingNeutrals
 
         return null
     }
@@ -145,6 +162,7 @@ class FindHelper(private val world: World, private val game: Game, private val w
         private var allWizardsCache: MutableMap<List<Boolean>, List<Wizard>> = HashMap()
         private var allBuldings: MutableMap<Boolean, List<Building>> = HashMap()
         private var allMinions: MutableMap<List<Boolean>, List<Minion>> = HashMap()
+        private var allMovingNeutrals: List<Minion>? = null
         private var allTrees: List<Tree>? = null
 
         fun clearCache() {

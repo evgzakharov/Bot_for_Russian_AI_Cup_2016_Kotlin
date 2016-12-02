@@ -3,7 +3,6 @@ import MapHelper.getLinePointToBaseEnemy
 import MapHelper.getLinePositions
 import MapHelper.getNearestPointInLine
 import MapHelper.getPointInLine
-import WayFinder.Companion.MAX_RANGE
 import model.Game
 import model.LaneType
 import model.Wizard
@@ -12,13 +11,14 @@ import java.util.*
 
 class MapWayFinder(val world: World, val game: Game, private val wizard: Wizard) {
 
-    fun getNextWaypoint(laneType: LaneType): Point2D {
+    fun getNextWaypoint(laneType: LaneType, globalStrateg: GlobalStrateg): Point2D {
         val wizardOnLine = getLinePositions(wizard, 1.0)
                 .filter { linePosition -> linePosition.mapLine.laneType === laneType }
 
-        val linePointToBaseEnemy = getLinePointToBaseEnemy(laneType)
+        val linePointToBaseEnemy = getLinePointToBaseEnemy(laneType, globalStrateg)
 
         val safeWay = wizardOnLine.isEmpty() || wizard.getDistanceTo(linePointToBaseEnemy) > MAX_SAFE_DISTANCE
+                || globalStrateg == GlobalStrateg.DEFENCE
 
         val pointToMove = getPointTo(linePointToBaseEnemy, safeWay, null)
 
@@ -40,7 +40,7 @@ class MapWayFinder(val world: World, val game: Game, private val wizard: Wizard)
     fun getPreviousWaypoint(laneType: LaneType): Point2D {
         val pointToMove = getPointTo(friendBasePoint, true, null)
 
-        return if (wizard.getDistanceTo(pointToMove) < MAX_RANGE) {
+        return if (wizard.getDistanceTo(pointToMove) < MAX_SELF_WAY_RANGE) {
             getPointTo(friendBasePoint, true, pointToMove)
         } else
             pointToMove
@@ -77,7 +77,8 @@ class MapWayFinder(val world: World, val game: Game, private val wizard: Wizard)
                             if (wizardLine.enemyWizardPositions.isEmpty())
                                 return getPointInLine(linePosition)
 
-                            if (wizardLine.startPoint == friendBasePoint && position < wizardLine.lineLength * BASE_POINT_POSITION_FACTOR)
+                            if (wizardLine.startPoint == friendBasePoint && wizardLine.enemyWizardPositions
+                                    .all { it.value < wizardLine.lineLength * BASE_POINT_POSITION_FACTOR })
                                 return getPointInLine(linePosition)
 
                             val isSafeWay = wizardLine.enemyWizardPositions.values

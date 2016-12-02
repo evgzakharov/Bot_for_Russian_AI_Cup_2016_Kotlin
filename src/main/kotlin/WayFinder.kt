@@ -13,7 +13,7 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
         this.findHelper = FindHelper(world, game, wizard)
     }
 
-    fun findWay(point: Point2D): List<Point2D> {
+    fun findWay(point: Point2D): Point2D? {
         val matrixStart = Matrix(Point2D(wizard.x, wizard.y), MatrixPoint(0, 0), null)
         matrixStart.pathCount = 0.0
 
@@ -23,7 +23,7 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
 
         val findLine = growMatrix(listOf(matrixStart), point, allMovingUnits, allBuildings, allTrees)
 
-        return findLine
+        return findLine.firstOrNull()
     }
 
     private fun growMatrix(stepPoints: List<Matrix>, findingWayPoint: Point2D, allMovingUnits: List<LivingUnit>, allBuildings: List<LivingUnit>, allTrees: List<LivingUnit>): List<Point2D> {
@@ -167,7 +167,7 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
 
     companion object {
 
-        val MAX_RANGE = 150.0
+        private val MAX_RANGE = 150.0
 
         private val WIZARD_RADIUS_FACTOR: Double = 0.9
 

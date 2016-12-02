@@ -25,7 +25,7 @@ class AttackAction : Action() {
                     shootHelder.shootToTarget(livingUnit)
                 }
             } else {
-                nextWaypoint = mapWayFinder.getNextWaypoint(strategyManager.currentLaneType!!)
+                nextWaypoint = mapWayFinder.getNextWaypoint(strategyManager.currentLaneType!!, strategyManager.globalStrateg)
                 moveHelper.goWithoutTurn(nextWaypoint)
 
                 if (nearestTarget != null) {

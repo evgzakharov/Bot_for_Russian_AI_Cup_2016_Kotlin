@@ -102,9 +102,15 @@ object MapHelper {
                 if (findHelper.isEnemy(wizard.faction, someWizard)) {
                     wizardLine.enemyWizardPositions.put(wizardId, linePosition.position)
                     wizardLine.historyEnemyWizardPositions.put(wizardId, HistoryValue(world.tickIndex, linePosition.position))
+
+                    if (wizardLine.enemyPosition == null || wizardLine.enemyPosition!! > linePosition.position)
+                        wizardLine.enemyPosition = linePosition.position
                 } else {
                     wizardLine.friendWizardPositions.put(wizardId, linePosition.position)
                     wizardLine.historyFriendWizardPositions.put(wizardId, HistoryValue(world.tickIndex, linePosition.position))
+
+                    if (wizardLine.friendPosition == null || wizardLine.friendPosition!! < linePosition.position)
+                        wizardLine.friendPosition = linePosition.position
                 }
             }
         }
@@ -233,7 +239,7 @@ object MapHelper {
         return relativeAngleTo
     }
 
-    fun getLinePointToBaseEnemy(laneType: LaneType): Point2D {
+    fun getLinePointToBaseEnemy(laneType: LaneType, globalStrateg: GlobalStrateg): Point2D {
         if (world.tickIndex - lastCheckPointToMoveTick < CHANGE_POINT_TO_MOVE_MIN_TICK_DIFF
                 && lastPointToMove != null && lastLaneToMove == laneType)
             return lastPointToMove!!
@@ -243,13 +249,18 @@ object MapHelper {
         lastCheckPointToMoveTick = world.tickIndex
         lastLaneToMove = laneType
 
+        val movingDiff = if (globalStrateg == GlobalStrateg.ATTACK)
+            MOVE_FORWARD
+        else
+            MOVE_BACKWARD
+
         lastPointToMove = if (lane.enemy.friendPosition != null)
-            getPointInLine(lane.enemy, lane.enemy.friendPosition!! + MOVE_FORWARD)
+            getPointInLine(lane.enemy, lane.enemy.friendPosition!! + movingDiff)
         else if (lane.friend.friendPosition != 0.0)
             if (lane.friend.friendPosition!! < lane.friend.lineLength * LINE_BACK_FACTOR)
-                getPointInLine(lane.friend, lane.friend.enemyPosition ?: lane.friend.friendPosition!!)
+                getPointInLine(lane.friend, (lane.friend.enemyPosition ?: lane.friend.friendPosition!!) + movingDiff)
             else
-                getPointInLine(lane.friend, max(lane.friend.friendPosition ?: 0.0, lane.friend.enemyPosition ?: 0.0) + MOVE_FORWARD)
+                getPointInLine(lane.friend, max(lane.friend.friendPosition ?: 0.0, lane.friend.enemyPosition ?: 0.0) + movingDiff)
         else {
             getPointInLine(lane.friend, lane.friend.lineLength - START_POINT_POSITON)
         }
@@ -266,7 +277,7 @@ object MapHelper {
 
     var mapSize = 4000.0
 
-    val friendBasePoint = Point2D(150.0, mapSize - 150.0)
+    val friendBasePoint = Point2D(120.0, mapSize - 120.0)
     var topPoint = Point2D(300.0, 300.0)
     var middlePoint = Point2D(2000.0, 2000.0)
     var bottomPoint = Point2D(mapSize - 300.0, mapSize - 300.0)
@@ -330,6 +341,7 @@ object MapHelper {
     val START_POINT_POSITON = 300.0
 
     val MOVE_FORWARD = 200.0
+    val MOVE_BACKWARD = -50.0
 
     val LINE_BACK_FACTOR: Double = 0.5
 

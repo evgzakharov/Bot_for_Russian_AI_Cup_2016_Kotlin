@@ -37,21 +37,11 @@ class MoveHelper(private val self: Wizard, private val world: World, private val
     }
 
     fun correctPoint(point2D: Point2D): Point2D {
-        if (point2D == lastFindingPoint) {
-            if (lastFoundPoint != null)
-                return lastFoundPoint!!
-            else
-                return point2D
-        }
-
-        lastFindingPoint = point2D
-
         val wayFinder = WayFinder(self, world, game)
         val way = wayFinder.findWay(point2D)
 
-        if (way != null && way.size > 0) {
-            val findPoint = way[0]
-            lastFoundPoint = findPoint
+        if (way != null) {
+            val findPoint = way
 
             return findPoint
         }
