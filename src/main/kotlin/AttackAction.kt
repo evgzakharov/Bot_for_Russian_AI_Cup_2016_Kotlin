@@ -18,6 +18,8 @@ class AttackAction : Action() {
 
             val nextWaypoint: Point2D?
             if (isNeedToMoveBack()) {
+                if (self.life < self.maxLife * 0.7) safeHelper.tryToSafeByShield(self)
+
                 moveHelper.goWithoutTurn(mapWayFinder.getPreviousWaypoint(strategyManager.currentLaneType!!))
 
                 nearestTarget?.let { livingUnit ->

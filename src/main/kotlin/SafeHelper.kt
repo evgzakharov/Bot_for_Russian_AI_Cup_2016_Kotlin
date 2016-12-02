@@ -21,7 +21,7 @@ class SafeHelper(val self: Wizard, val game: Game, val move: Move) {
     }
 
     companion object {
-        val MIN_LIFE_FACTOR: Double = 0.7
+        val MIN_LIFE_FACTOR: Double = 0.4
     }
 
 }

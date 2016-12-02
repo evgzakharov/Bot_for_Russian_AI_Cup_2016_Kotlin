@@ -35,8 +35,8 @@ abstract class Action {
 
     open fun move(target: Any?): Boolean {
         val veryCloseTree = findHelper.getAllTrees()
-                .filter { tree -> self.getDistanceTo(tree) <= self.radius * 2 + tree.radius  }
-                .minBy { abs(self.getAngleTo(it)) }
+                .filter { tree -> self.getDistanceTo(tree) <= self.radius * 2 + tree.radius }
+                .minBy { self.getAngleTo(it) }
 
         veryCloseTree?.let { tree -> shootHelder.shootToTarget(veryCloseTree) }
 
