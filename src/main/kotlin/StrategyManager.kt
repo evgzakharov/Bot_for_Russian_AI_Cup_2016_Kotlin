@@ -25,7 +25,7 @@ class StrategyManager {
     val defaulActionMode: ActionMode = ActionMode.ATTACK
 
     var laneType: LaneType? = null
-    var lastLaneChangeTick: Int = 0
+    var lastLaneChangeTick: Int = -MIN_CHANGE_TICK_LIMIT
 
     var globalStrateg = GlobalStrateg.ATTACK
 
@@ -55,21 +55,26 @@ class StrategyManager {
             checkSkills()
 
             updateBonusInfo()
+
+            globalStrategDecision()
+
             actionDecision()
-
-            val needDefence = laneDefenceDecision()
-            if (!needDefence) {
-                globalStrateg = GlobalStrateg.ATTACK
-
-                val attack = laneAttackDecision()
-                if (attack) updateInfo(attack)
-            } else {
-                globalStrateg = GlobalStrateg.DEFENCE
-            }
 
             action()
         } catch (e: Throwable) {
             moveHelper.goTo(friendBasePoint)
+        }
+    }
+
+    private fun globalStrategDecision() {
+        val needDefence = laneDefenceDecision()
+        if (!needDefence) {
+            globalStrateg = GlobalStrateg.ATTACK
+
+            val attack = laneAttackDecision()
+            if (attack) updateInfo(attack)
+        } else {
+            globalStrateg = GlobalStrateg.DEFENCE
         }
     }
 
@@ -90,9 +95,7 @@ class StrategyManager {
     }
 
     private fun action() {
-        val moveSuccess = if (globalStrateg == GlobalStrateg.ATTACK) {
-            movingTarget?.let { move(it) } ?: false
-        } else false
+        val moveSuccess = movingTarget?.let { move(it) } ?: false
 
         if (!moveSuccess) {
             actionMode = defaulActionMode
@@ -141,7 +144,7 @@ class StrategyManager {
                 .find { it.mapLine.laneType == null }?.let { true } ?: false
 
         //TODO: add more creterias
-        if (mayCatchBonus != null && wizardOnArtifactLine) {
+        if (mayCatchBonus != null && wizardOnArtifactLine && globalStrateg == GlobalStrateg.ATTACK) {
             val wizardInEnemyLine = MapHelper.getLinePositions(self, 1.0)
                     .filter { it.mapLine.enemy }
                     .firstOrNull()
@@ -172,13 +175,13 @@ class StrategyManager {
             line.enemy == false &&
                     ((line.deadFriendTowerCount >= 1
                             && line.enemyWizardPositions.isNotEmpty()
-                            && (line.friendWizardPositions.values.all { it < line.lineLength * LINE_MIN_FACTOR } || line.friendWizardPositions.isEmpty()))
+                            && (line.friendWizardPositions.values.all { it < line.lineLength * LINE_MIN_DEFENCE_FACTOR } || line.friendWizardPositions.isEmpty()))
                             || (line.deadFriendTowerCount == 2 && line.enemyWizardPositions.isNotEmpty()))
         }
         if (friendMostKillingLine)
             return true
 
-        return true
+        return false
     }
 
     private fun laneAttackDecision(): Boolean {
@@ -193,10 +196,11 @@ class StrategyManager {
                 .mapValues { attackLine -> attackLine.value.friendWizards() }
                 .filter { it.value.isEmpty() }.keys
                 .firstOrNull()
-                ?.let { true } ?: false
 
-        if (lineWithoutFriendWizards)
+        if (lineWithoutFriendWizards != null) {
+            this.laneType = lineWithoutFriendWizards
             return true
+        }
 
         //or attack line, there are friend wizards less when enemy wizards
         val enemyMostKillingLine = mapLines.shouldChangeLine { line ->
@@ -211,7 +215,9 @@ class StrategyManager {
     }
 
     private fun AttackLine.friendWizards(): Set<Long> {
-        return this.friend.friendWizardPositions.keys + this.enemy.friendWizardPositions.keys
+        return this.friend.friendWizardPositions
+                .filter { it.value >= this@friendWizards.friend.lineLength * LINE_WIZARD_MIN_FACTOR }
+                .keys + this.enemy.friendWizardPositions.keys
     }
 
     private fun List<MapLine>.shouldChangeLine(sortByEnemyTowers: Boolean = true, criteria: (MapLine) -> Boolean): Boolean {
@@ -258,7 +264,9 @@ class StrategyManager {
 
         const val LINE_POSITION_MULTIPLIER: Double = 0.2
 
-        const val LINE_MIN_FACTOR: Double = 0.3
+        const val LINE_MIN_DEFENCE_FACTOR: Double = 0.3
+
+        const val LINE_WIZARD_MIN_FACTOR: Double = 0.2
 
         val skillesToLearnFrost: List<SkillType> = listOf(
                 SkillType.MAGICAL_DAMAGE_BONUS_PASSIVE_1,

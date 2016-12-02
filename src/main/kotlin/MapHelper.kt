@@ -1,3 +1,4 @@
+import MapHelper.HISTORY_TICK_COUNT
 import model.*
 import java.lang.StrictMath.*
 import java.util.*
@@ -35,6 +36,9 @@ object MapHelper {
         mapLines.forEach { mapLine ->
             mapLine.enemyWizardPositions.clear()
             mapLine.friendWizardPositions.clear()
+
+            mapLine.historyEnemyWizardPositions.filterByTick(world.tickIndex)
+            mapLine.historyFriendWizardPositions.filterByTick(world.tickIndex)
 
             if (mapLine.enemy) {
                 mapLine.enemyPosition = mapLine.lineLength
@@ -95,10 +99,13 @@ object MapHelper {
                 val wizardLine = linePosition.mapLine
                 val wizardId = someWizard.id
 
-                if (findHelper.isEnemy(wizard.faction, someWizard))
+                if (findHelper.isEnemy(wizard.faction, someWizard)) {
                     wizardLine.enemyWizardPositions.put(wizardId, linePosition.position)
-                else
+                    wizardLine.historyEnemyWizardPositions.put(wizardId, HistoryValue(world.tickIndex, linePosition.position))
+                } else {
                     wizardLine.friendWizardPositions.put(wizardId, linePosition.position)
+                    wizardLine.historyFriendWizardPositions.put(wizardId, HistoryValue(world.tickIndex, linePosition.position))
+                }
             }
         }
     }
@@ -328,5 +335,13 @@ object MapHelper {
 
     val CHANGE_POINT_TO_MOVE_MIN_TICK_DIFF: Int = 50
 
+    val HISTORY_TICK_COUNT: Int = 500
+
     var deadGuardTowers: MutableMap<Long, Building> = HashMap()
+}
+
+private fun MutableMap<Long, HistoryValue>.filterByTick(currentTick: Int) {
+    this.iterator().forEach {
+        if (currentTick - it.value.tick > HISTORY_TICK_COUNT) this.remove(it.key)
+    }
 }
