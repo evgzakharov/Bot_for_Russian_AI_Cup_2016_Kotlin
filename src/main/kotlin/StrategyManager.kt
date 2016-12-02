@@ -24,8 +24,9 @@ class StrategyManager {
     var movingTarget: Any? = null
     val defaulActionMode: ActionMode = ActionMode.ATTACK
 
-    var laneType: LaneType? = null
-    var lastLaneChangeTick: Int = -MIN_CHANGE_TICK_LIMIT
+    var currentLaneType: LaneType? = null
+    var lastLaneDefenceChangeTick: Int = -MIN_CHANGE_DEFENCE_TICK_LIMIT
+    var lastLaneAttackChangeTick: Int = -MIN_CHANGE_ATTACK_TICK_LIMIT
 
     var globalStrateg = GlobalStrateg.ATTACK
 
@@ -67,14 +68,23 @@ class StrategyManager {
     }
 
     private fun globalStrategDecision() {
-        val needDefence = laneDefenceDecision()
-        if (!needDefence) {
+        val needDefenceLine = laneDefenceDecision()
+        if (needDefenceLine == null) {
             globalStrateg = GlobalStrateg.ATTACK
 
-            val attack = laneAttackDecision()
-            if (attack) updateInfo(attack)
+            val laneChange = laneAttackDecision()
+
+            if (laneChange != null) {
+                lastLaneAttackChangeTick = world.tickIndex
+                this.currentLaneType = laneChange
+            }
         } else {
             globalStrateg = GlobalStrateg.DEFENCE
+
+            if (needDefenceLine != this.currentLaneType) {
+                lastLaneDefenceChangeTick = world.tickIndex
+                currentLaneType = needDefenceLine
+            }
         }
     }
 
@@ -88,10 +98,6 @@ class StrategyManager {
                 .first()
 
         move.skillToLearn = skillsToLearn
-    }
-
-    private fun updateInfo(laneDecision: Boolean) {
-        if (laneDecision) lastLaneChangeTick = world.tickIndex
     }
 
     private fun action() {
@@ -169,27 +175,33 @@ class StrategyManager {
         }
     }
 
-    private fun laneDefenceDecision(): Boolean {
-        //defence
-        val friendMostKillingLine = mapLines.shouldChangeLine(sortByEnemyTowers = false) { line ->
-            line.enemy == false &&
-                    ((line.deadFriendTowerCount >= 1
-                            && line.enemyWizardPositions.isNotEmpty()
-                            && (line.friendWizardPositions.values.all { it < line.lineLength * LINE_MIN_DEFENCE_FACTOR } || line.friendWizardPositions.isEmpty()))
-                            || (line.deadFriendTowerCount == 2 && line.enemyWizardPositions.isNotEmpty()))
-        }
-        if (friendMostKillingLine)
-            return true
+    private fun laneDefenceDecision(): LaneType? {
+        if (world.tickIndex < MIN_START_CHANGE_TICK)
+            return null
 
-        return false
+        if (world.tickIndex - lastLaneDefenceChangeTick <= MIN_CHANGE_DEFENCE_TICK_LIMIT)
+            return null
+
+        val defenceLine = mapLines
+                .filter { line ->
+                    line.enemy == false &&
+                            ((line.deadFriendTowerCount >= 1
+                                    && line.enemyWizardPositions.isNotEmpty()
+                                    && line.historyFriendWizardPositions.toData().values.all { it < line.lineLength * LINE_MIN_DEFENCE_FACTOR }))
+                            || (line.deadFriendTowerCount == 2 && line.enemyWizardPositions.isNotEmpty())
+                }
+                .minBy { line -> line.enemyWizardPositions.values.min() ?: line.lineLength }
+                ?.let { it.laneType }
+
+        return defenceLine
     }
 
-    private fun laneAttackDecision(): Boolean {
+    private fun laneAttackDecision(): LaneType? {
         if (world.tickIndex < MIN_START_CHANGE_TICK)
-            return false
+            return null
 
-        if (world.tickIndex - lastLaneChangeTick <= MIN_CHANGE_TICK_LIMIT)
-            return false
+        if (world.tickIndex - lastLaneAttackChangeTick <= MIN_CHANGE_ATTACK_TICK_LIMIT)
+            return null
 
         //or attack on line without wizards
         val lineWithoutFriendWizards = attackLines
@@ -197,49 +209,48 @@ class StrategyManager {
                 .filter { it.value.isEmpty() }.keys
                 .firstOrNull()
 
-        if (lineWithoutFriendWizards != null) {
-            this.laneType = lineWithoutFriendWizards
-            return true
-        }
+        if (lineWithoutFriendWizards != null)
+            return lineWithoutFriendWizards
+
 
         //or attack line, there are friend wizards less when enemy wizards
         val enemyMostKillingLine = mapLines.shouldChangeLine { line ->
             line.enemy == true
-                    && attackLines[laneType]!!.friendWizards().size < line.enemyWizardPositions.size
+                    && attackLines[currentLaneType]!!.friendWizards().size < line.historyEnemyWizardPositions.size
                     && line.deadEnemyTowerCount > 0
         }
-        if (enemyMostKillingLine)
-            return true
+        if (enemyMostKillingLine != null)
+            return enemyMostKillingLine
 
-        return false
+        return null
     }
 
     private fun AttackLine.friendWizards(): Set<Long> {
-        return this.friend.friendWizardPositions
+        return this.friend.historyFriendWizardPositions.toData()
                 .filter { it.value >= this@friendWizards.friend.lineLength * LINE_WIZARD_MIN_FACTOR }
-                .keys + this.enemy.friendWizardPositions.keys
+                .keys + this.enemy.historyFriendWizardPositions.toData().keys
     }
 
-    private fun List<MapLine>.shouldChangeLine(sortByEnemyTowers: Boolean = true, criteria: (MapLine) -> Boolean): Boolean {
+    private fun List<MapLine>.shouldChangeLine(sortByEnemyTowers: Boolean = true, criteria: (MapLine) -> Boolean): LaneType? {
         return this.filter { criteria(it) }
                 .sortedByDescending { if (sortByEnemyTowers) it.deadEnemyTowerCount else it.deadFriendTowerCount }
-                .firstOrNull()?.run { this@StrategyManager.laneType = this.laneType; true } ?: false
+                .firstOrNull()?.laneType
     }
 
 
     private fun MapLine.friendWizardsOnLine(): Int {
         if (laneType == this.laneType)
-            return this.friendWizardPositions.count() + 1
+            return this.historyFriendWizardPositions.count() + 1
         else
-            return this.friendWizardPositions.count()
+            return this.historyFriendWizardPositions.count()
     }
 
     private fun initializeDefault() {
-        if (laneType == null) {
+        if (currentLaneType == null) {
             when (self.id.toInt()) {
-                1, 2, 6, 7 -> laneType = LaneType.TOP
-                3, 8 -> laneType = LaneType.MIDDLE
-                4, 5, 9, 10 -> laneType = LaneType.BOTTOM
+                1, 2, 6, 7 -> currentLaneType = LaneType.TOP
+                3, 8 -> currentLaneType = LaneType.MIDDLE
+                4, 5, 9, 10 -> currentLaneType = LaneType.BOTTOM
             }
         }
 
@@ -259,8 +270,10 @@ class StrategyManager {
 
         const val BONUS_UPDATE_TICK: Int = 2500
 
-        const val MIN_START_CHANGE_TICK: Int = 250
-        const val MIN_CHANGE_TICK_LIMIT: Int = 1500
+        const val MIN_START_CHANGE_TICK: Int = 500
+
+        const val MIN_CHANGE_DEFENCE_TICK_LIMIT: Int = 300
+        const val MIN_CHANGE_ATTACK_TICK_LIMIT: Int = 2500
 
         const val LINE_POSITION_MULTIPLIER: Double = 0.2
 

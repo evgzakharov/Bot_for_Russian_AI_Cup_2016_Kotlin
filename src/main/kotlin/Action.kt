@@ -46,7 +46,7 @@ abstract class Action {
                     .filter { tree -> self.getDistanceTo(tree) <= self.radius + tree.radius + MIN_CLOSEST_DISTANCE }
                     .firstOrNull()
 
-            veryCloseTree?.let { tree -> shootHelder.shootToTarget(tree) }
+            veryCloseTree?.let { tree -> shootHelder.shootToTarget(veryCloseTree) }
         }
 
         return true

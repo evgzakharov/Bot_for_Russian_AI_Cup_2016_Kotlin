@@ -335,13 +335,21 @@ object MapHelper {
 
     val CHANGE_POINT_TO_MOVE_MIN_TICK_DIFF: Int = 50
 
-    val HISTORY_TICK_COUNT: Int = 500
+    val HISTORY_TICK_COUNT: Int = 2000
 
     var deadGuardTowers: MutableMap<Long, Building> = HashMap()
 }
 
-private fun MutableMap<Long, HistoryValue>.filterByTick(currentTick: Int) {
-    this.iterator().forEach {
-        if (currentTick - it.value.tick > HISTORY_TICK_COUNT) this.remove(it.key)
+fun MutableMap<Long, HistoryValue>.filterByTick(currentTick: Int) {
+    val iterator = this.iterator()
+    while(iterator.hasNext()){
+        val currentValue = iterator.next()
+
+        if (currentTick - currentValue.value.tick > HISTORY_TICK_COUNT)
+            iterator.remove()
     }
+}
+
+fun Map<Long, HistoryValue>.toData(): Map<Long, Double> {
+    return this.mapValues { it.value.value }
 }

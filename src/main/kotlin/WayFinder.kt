@@ -167,7 +167,7 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
 
     companion object {
 
-        val MAX_RANGE = 200.0
+        val MAX_RANGE = 250.0
 
         private val WIZARD_RADIUS_FACTOR: Double = 0.9
 
