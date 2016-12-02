@@ -1,3 +1,4 @@
+import MapHelper.HISTORY_TICK_COUNT
 import model.*
 import java.lang.StrictMath.*
 import java.util.*
@@ -35,6 +36,9 @@ object MapHelper {
         mapLines.forEach { mapLine ->
             mapLine.enemyWizardPositions.clear()
             mapLine.friendWizardPositions.clear()
+
+            mapLine.historyEnemyWizardPositions.filterByTick(world.tickIndex)
+            mapLine.historyFriendWizardPositions.filterByTick(world.tickIndex)
 
             if (mapLine.enemy) {
                 mapLine.enemyPosition = mapLine.lineLength
@@ -95,10 +99,13 @@ object MapHelper {
                 val wizardLine = linePosition.mapLine
                 val wizardId = someWizard.id
 
-                if (findHelper.isEnemy(wizard.faction, someWizard))
+                if (findHelper.isEnemy(wizard.faction, someWizard)) {
                     wizardLine.enemyWizardPositions.put(wizardId, linePosition.position)
-                else
+                    wizardLine.historyEnemyWizardPositions.put(wizardId, HistoryValue(world.tickIndex, linePosition.position))
+                } else {
                     wizardLine.friendWizardPositions.put(wizardId, linePosition.position)
+                    wizardLine.historyFriendWizardPositions.put(wizardId, HistoryValue(world.tickIndex, linePosition.position))
+                }
             }
         }
     }
@@ -259,7 +266,7 @@ object MapHelper {
 
     var mapSize = 4000.0
 
-    val friendBasePoint = Point2D(100.0, mapSize - 100.0)
+    val friendBasePoint = Point2D(150.0, mapSize - 150.0)
     var topPoint = Point2D(300.0, 300.0)
     var middlePoint = Point2D(2000.0, 2000.0)
     var bottomPoint = Point2D(mapSize - 300.0, mapSize - 300.0)
@@ -328,5 +335,21 @@ object MapHelper {
 
     val CHANGE_POINT_TO_MOVE_MIN_TICK_DIFF: Int = 50
 
+    val HISTORY_TICK_COUNT: Int = 2000
+
     var deadGuardTowers: MutableMap<Long, Building> = HashMap()
+}
+
+fun MutableMap<Long, HistoryValue>.filterByTick(currentTick: Int) {
+    val iterator = this.iterator()
+    while(iterator.hasNext()){
+        val currentValue = iterator.next()
+
+        if (currentTick - currentValue.value.tick > HISTORY_TICK_COUNT)
+            iterator.remove()
+    }
+}
+
+fun Map<Long, HistoryValue>.toData(): Map<Long, Double> {
+    return this.mapValues { it.value.value }
 }
