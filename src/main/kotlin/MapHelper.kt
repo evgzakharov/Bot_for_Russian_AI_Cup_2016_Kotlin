@@ -271,7 +271,7 @@ object MapHelper {
 
     var mapSize = 4000.0
 
-    val friendBasePoint = Point2D(120.0, mapSize - 120.0)
+    val friendBasePoint = Point2D(300.0, mapSize - 300.0)
     var topPoint = Point2D(300.0, 300.0)
     var middlePoint = Point2D(2000.0, 2000.0)
     var bottomPoint = Point2D(mapSize - 300.0, mapSize - 300.0)

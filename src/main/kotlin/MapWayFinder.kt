@@ -20,10 +20,10 @@ class MapWayFinder(val world: World, val game: Game, private val wizard: Wizard)
         val safeWay = wizardOnLine.isEmpty() || wizard.getDistanceTo(linePointToBaseEnemy) > MAX_SAFE_DISTANCE
                 || globalStrateg == GlobalStrateg.DEFENCE
 
-        val pointToMove = getPointTo(linePointToBaseEnemy, safeWay, null)
+        val pointToMove = getPointTo(linePointToBaseEnemy, safeWay)
 
         return if (wizard.getDistanceTo(pointToMove) > MAX_SELF_WAY_RANGE) {
-            getPointTo(linePointToBaseEnemy, safeWay, correctPoint(pointToMove))
+            getPointTo(correctPoint(pointToMove), safeWay)
         } else
             pointToMove
     }
@@ -38,32 +38,30 @@ class MapWayFinder(val world: World, val game: Game, private val wizard: Wizard)
     }
 
     fun getPreviousWaypoint(laneType: LaneType): Point2D {
-        val pointToMove = getPointTo(friendBasePoint, true, null)
-
-        return if (wizard.getDistanceTo(pointToMove) < MAX_SELF_WAY_RANGE) {
-            getPointTo(friendBasePoint, true, pointToMove)
+        return if (wizard.getDistanceTo(friendBasePoint) > MAX_SELF_WAY_RANGE) {
+            getPointTo(friendBasePoint, true)
         } else
-            pointToMove
+            friendBasePoint
 
     }
 
-    fun getPointTo(point: Point2D, safeWay: Boolean, nextWizardPoint: Point2D?): Point2D {
+    fun getPointTo(point: Point2D, safeWay: Boolean): Point2D {
         if (!safeWay)
-            return getSafePointTo(point, safeWay, nextWizardPoint)!!
+            return getSafePointTo(point, safeWay)!!
 
-        return getSafePointTo(point, safeWay, nextWizardPoint) ?: getSafePointTo(point, false, nextWizardPoint)!!
+        return getSafePointTo(point, safeWay) ?: getSafePointTo(point, false)!!
     }
 
-    fun getSafePointTo(point: Point2D, safeWay: Boolean, nextWizardPoint: Point2D?): Point2D? {
-        val wizardPositions = getLinePositions(nextWizardPoint?.let { it } ?: wizard.toPoint(), 1.0)
+    fun getSafePointTo(point: Point2D, safeWay: Boolean): Point2D? {
+        val wizardPositions = getLinePositions(wizard.toPoint(), 1.0)
 
-        val pointDistance = point.getDistanceTo(nextWizardPoint?.let { it } ?: wizard.toPoint())
+        val pointDistance = wizard.getDistanceTo(point)
 
         if (pointDistance < WAY_FINDER_DISTANCE)
             return point
 
         if (wizardPositions.isEmpty()) {
-            return getNearestPointInLine(nextWizardPoint?.let { it } ?: wizard.toPoint())
+            return getNearestPointInLine(wizard.toPoint())
         } else {
             val linePositions = getLinePositions(point.x, point.y, 1.0)
 
@@ -230,7 +228,7 @@ class MapWayFinder(val world: World, val game: Game, private val wizard: Wizard)
 
         val MIN_TICK_DIFF_TO_FIND_POINT = 50
 
-        val NEXT_LINE_DISTANCE: Double = 150.0
+        val NEXT_LINE_DISTANCE: Double = 450.0
 
         val WAY_FINDER_DISTANCE = 150.0
 
