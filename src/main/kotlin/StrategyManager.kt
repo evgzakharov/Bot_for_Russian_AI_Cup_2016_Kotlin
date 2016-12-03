@@ -95,7 +95,7 @@ class StrategyManager {
 
         val selfSkils = self.getSkills().toList()
 
-        val skillsToLearn = skillesToLearnFire
+        val skillsToLearn = skillesToLearnFrost
                 .filter { selfSkils.isEmpty() || !selfSkils.contains(it) }
                 .first()
 
@@ -137,7 +137,7 @@ class StrategyManager {
                 .firstOrNull()
 
         if (nearestArtifact != null) {
-            actionMode = ActionMode.MOVE_TO_POINT
+            actionMode = ActionMode.CATCH_ARTIFACT
             movingTarget = nearestArtifact.toPoint()
             return
         }
@@ -158,7 +158,7 @@ class StrategyManager {
                     .firstOrNull()
 
             if (wizardInEnemyLine == null || (wizardInEnemyLine.position < wizardInEnemyLine.mapLine.lineLength * LINE_POSITION_MULTIPLIER)) {
-                actionMode = ActionMode.MOVE_TO_POINT
+                actionMode = ActionMode.CATCH_ARTIFACT
                 movingTarget = mayCatchBonus
                 return
             }
@@ -172,6 +172,13 @@ class StrategyManager {
         world.getWizards().forEach { wizard ->
             bonuses.forEach { bonus ->
                 if (wizard.radius + game.bonusRadius >= wizard.getDistanceTo(bonus.key))
+                    bonus.value.lastCatchTick = world.tickIndex
+
+                val distanceToArtifact = wizard.getDistanceTo(bonus.key)
+                val worldBonuses = world.getBonuses()
+
+                if (!findHelper.isEnemy(self.faction, wizard) &&
+                        (distanceToArtifact <= wizard.visionRange && worldBonuses.none { bonus.key.getDistanceTo(it) <= game.bonusRadius }))
                     bonus.value.lastCatchTick = world.tickIndex
             }
         }
@@ -247,14 +254,6 @@ class StrategyManager {
                 .firstOrNull()?.laneType
     }
 
-
-    private fun MapLine.friendWizardsOnLine(): Int {
-        if (laneType == this.laneType)
-            return this.historyFriendWizardPositions.count() + 1
-        else
-            return this.historyFriendWizardPositions.count()
-    }
-
     private fun initializeDefault() {
         if (currentLaneType == null) {
             when (self.id.toInt()) {
@@ -266,7 +265,7 @@ class StrategyManager {
 
         gameManagers.put(ActionMode.ATTACK, AttackAction())
         gameManagers.put(ActionMode.KILL_ENEMY, KillEnemyAction())
-        gameManagers.put(ActionMode.MOVE_TO_POINT, MoveToPointAction())
+        gameManagers.put(ActionMode.CATCH_ARTIFACT, CatchArtifactAction())
     }
 
     private fun BonusTimeCatch.tickDiff() = abs(world.tickIndex - this.lastCatchTick)

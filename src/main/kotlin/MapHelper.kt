@@ -249,21 +249,28 @@ object MapHelper {
         lastCheckPointToMoveTick = world.tickIndex
         lastLaneToMove = laneType
 
-        val movingDiff = if (globalStrateg == GlobalStrateg.ATTACK)
-            MOVE_FORWARD
-        else
-            MOVE_BACKWARD
 
-        lastPointToMove = if (lane.enemy.friendPosition != null)
-            getPointInLine(lane.enemy, lane.enemy.friendPosition!! + movingDiff)
+        val newPointToMove = if (lane.enemy.friendPosition != null)
+            lane.enemy to lane.enemy.friendPosition!!
         else if (lane.friend.friendPosition != 0.0)
             if (lane.friend.friendPosition!! < lane.friend.lineLength * LINE_BACK_FACTOR)
-                getPointInLine(lane.friend, (lane.friend.enemyPosition ?: lane.friend.friendPosition!!) + movingDiff)
+                lane.friend to (lane.friend.enemyPosition ?: lane.friend.friendPosition!!)
             else
-                getPointInLine(lane.friend, max(lane.friend.friendPosition ?: 0.0, lane.friend.enemyPosition ?: 0.0) + movingDiff)
+                lane.friend to max(lane.friend.friendPosition ?: 0.0, lane.friend.enemyPosition ?: 0.0)
         else {
-            getPointInLine(lane.friend, lane.friend.lineLength - START_POINT_POSITON)
+            lane.friend to lane.friend.lineLength - START_POINT_POSITON
         }
+
+        val wizardInLine = getLinePositions(wizard, 1.0)
+                .find { it.mapLine.laneType == laneType }
+                ?.let { true } ?: false
+
+        val movingDiff = if (!newPointToMove.first.isEnemy!! && !wizardInLine)
+            MOVE_BACKWARD
+        else
+            MOVE_FORWARD
+
+        lastPointToMove = getPointInLine(newPointToMove.first, newPointToMove.second + movingDiff)
 
         return lastPointToMove!!
     }
@@ -340,8 +347,8 @@ object MapHelper {
 
     val START_POINT_POSITON = 300.0
 
-    val MOVE_FORWARD = 200.0
-    val MOVE_BACKWARD = -50.0
+    val MOVE_FORWARD = 100.0
+    val MOVE_BACKWARD = -100.0
 
     val LINE_BACK_FACTOR: Double = 0.5
 
