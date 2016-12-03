@@ -4,15 +4,12 @@ import java.lang.StrictMath.*
 
 class MoveHelper(private val self: Wizard, private val world: World, private val game: Game, private val move: Move) {
 
-    private var lastFindingPoint: Point2D? = null
-    private var lastFoundPoint: Point2D? = null
-
-    fun goTo(unit: LivingUnit) {
-        goTo(unit.toPoint())
+    fun goTo(unit: LivingUnit, increaseDistanceToMinion: Boolean = false) {
+        goTo(unit.toPoint(), increaseDistanceToMinion)
     }
 
-    fun goTo(point: Point2D) {
-        val correctedPoint = correctPoint(point)
+    fun goTo(point: Point2D, increaseDistanceToMinion: Boolean = false) {
+        val correctedPoint = correctPoint(point, increaseDistanceToMinion)
 
         val angle = self.getAngleTo(correctedPoint.x, correctedPoint.y)
         move.turn = angle
@@ -36,9 +33,9 @@ class MoveHelper(private val self: Wizard, private val world: World, private val
         move.strafeSpeed = game.wizardStrafeSpeed * strickCoef
     }
 
-    fun correctPoint(point2D: Point2D): Point2D {
+    fun correctPoint(point2D: Point2D, increaseDistanceToMinion: Boolean = false): Point2D {
         val wayFinder = WayFinder(self, world, game)
-        val way = wayFinder.findWay(point2D)
+        val way = wayFinder.findWay(point2D, increaseDistanceToMinion)
 
         if (way != null) {
             val findPoint = way

@@ -14,22 +14,30 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
         this.findHelper = FindHelper(world, game, wizard)
     }
 
-    fun findWay(point: Point2D): Point2D? {
+    fun findWay(point: Point2D, increaseDistanceToMinion: Boolean): Point2D? {
         val matrixStart = Matrix(Point2D(wizard.x, wizard.y), MatrixPoint(0, 0), null)
         matrixStart.pathCount = 0.0
 
-        val allMovingUnits = findHelper.getAllMovingUnits(onlyEnemy = false, onlyNearest = true, withNeutrals = true)
+        val allMinions = findHelper.getAllMinions(onlyEnemy = false, onlyNearest = true, withNeutrals = true)
+        val allWizards = findHelper.getAllWizards(onlyEnemy = false, onlyNearest = false)
         val allBuildings = findHelper.getAllBuldings(onlyEnemy = false)
         val allTrees = findHelper.getAllTrees().filter {
             max(abs(it.x - wizard.x), abs(it.y - wizard.y)) < MAX_RANGE
         }
 
-        val findLine = growMatrix(listOf(matrixStart), point, allMovingUnits, allBuildings, allTrees)
+        val findLine = growMatrix(listOf(matrixStart), point, allWizards, allMinions, allBuildings, allTrees, increaseDistanceToMinion)
 
         return findLine.firstOrNull()
     }
 
-    private fun growMatrix(stepPoints: List<Matrix>, findingWayPoint: Point2D, allMovingUnits: List<LivingUnit>, allBuildings: List<LivingUnit>, allTrees: List<LivingUnit>): List<Point2D> {
+    private fun growMatrix(
+            stepPoints: List<Matrix>,
+            findingWayPoint: Point2D,
+            allWizards: List<LivingUnit>,
+            allMinions: List<LivingUnit>,
+            allBuildings: List<LivingUnit>,
+            allTrees: List<LivingUnit>,
+            increaseDistanceToMinion: Boolean): List<Point2D> {
         val newStepPoints = ArrayList<Matrix>()
 
         var lastMatrix: Matrix? = null
@@ -78,7 +86,8 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
 
                     if (!checkPointPosition(newPoint)) continue
 
-                    if (!freeLocation(newPoint, allMovingUnits, distanceMultiplier).second) continue
+                    if (!freeLocation(newPoint, allMinions, distanceMultiplier, increaseDistanceToMinion).second) continue
+                    if (!freeLocation(newPoint, allWizards, distanceMultiplier).second) continue
                     if (!freeLocation(newPoint, allBuildings, distanceMultiplier).second) continue
 
                     val newMatrix = Matrix(newPoint, matrixPoint, stepMatrix)
@@ -95,7 +104,7 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
         }
 
         if (!newStepPoints.isEmpty()) {
-            val point2DS = growMatrix(newStepPoints, findingWayPoint, allMovingUnits, allBuildings, allTrees)
+            val point2DS = growMatrix(newStepPoints, findingWayPoint, allWizards, allMinions, allBuildings, allTrees, increaseDistanceToMinion)
             if (point2DS.isEmpty()) {
                 if (stepPoints.size == 1 && lastMatrix != null && lastMatrix.matrixPoints!!.isNotEmpty()) {
                     val nearestMatrix = lastMatrix.matrixPoints!!.values
@@ -110,18 +119,23 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
         return emptyList()
     }
 
-    private fun freeLocation(newPoint: Point2D, units: List<LivingUnit>, multiply: Double): Pair<LivingUnit?, Boolean> {
+    private fun freeLocation(newPoint: Point2D, units: List<LivingUnit>, multiply: Double, increaseDistance: Boolean = false): Pair<LivingUnit?, Boolean> {
         var closestUnit: LivingUnit? = null
-        val wizardRadius =  wizard.radius * multiply
+        val wizardRadius = wizard.radius * multiply
+
+        val closestDistance = if (increaseDistance)
+            MIN_INCREASE_CLOSEST_RANGE_FOR_DISTANCE
+        else
+            MIN_CLOSEST_RANGE_FOR_DISTANCE
 
         val isFree = units
-                .filter { unit -> isFractionBase(unit) || abs(unit.x - newPoint.x) <= unit.radius + wizardRadius + MIN_CLOSEST_RANGE_FOR_DISTANCE }
-                .filter { unit -> isFractionBase(unit) || abs(unit.x - newPoint.x) <= unit.radius + wizardRadius + MIN_CLOSEST_RANGE_FOR_DISTANCE }
+                .filter { unit -> isFractionBase(unit) || abs(unit.x - newPoint.x) <= unit.radius + wizardRadius + closestDistance }
+                .filter { unit -> isFractionBase(unit) || abs(unit.x - newPoint.x) <= unit.radius + wizardRadius + closestDistance }
                 .filter { unit -> abs(unit.x - newPoint.x) < MAX_RANGE }
                 .filter { unit -> abs(unit.y - newPoint.y) < MAX_RANGE }
                 .none { unit ->
                     closestUnit = unit
-                    newPoint.getDistanceTo(unit) <= getUnitDistance(unit) + wizardRadius + MIN_CLOSEST_RANGE
+                    newPoint.getDistanceTo(unit) <= getUnitDistance(unit) + wizardRadius + closestDistance
                 }
 
         return closestUnit to isFree
@@ -178,6 +192,7 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
         private val MIN_CLOSEST_RANGE = 5.0
 
         private val MIN_CLOSEST_RANGE_FOR_DISTANCE = 5.0
+        private val MIN_INCREASE_CLOSEST_RANGE_FOR_DISTANCE = 15.0
 
         private val MULTIPLIER_FACTOR_DIFF = 3
         private val MULTIPLIER_FACTOR_DIFF_V2 = 6

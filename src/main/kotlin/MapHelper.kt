@@ -102,9 +102,15 @@ object MapHelper {
                 if (findHelper.isEnemy(wizard.faction, someWizard)) {
                     wizardLine.enemyWizardPositions.put(wizardId, linePosition.position)
                     wizardLine.historyEnemyWizardPositions.put(wizardId, HistoryValue(world.tickIndex, linePosition.position))
+
+                    if (wizardLine.enemyPosition == null || (wizardLine.enemyPosition ?: wizardLine.lineLength) < linePosition.position)
+                        wizardLine.enemyPosition = linePosition.position
                 } else {
                     wizardLine.friendWizardPositions.put(wizardId, linePosition.position)
                     wizardLine.historyFriendWizardPositions.put(wizardId, HistoryValue(world.tickIndex, linePosition.position))
+
+                    if (wizardLine.friendPosition == null || (wizardLine.friendPosition ?: 0.0) < linePosition.position)
+                        wizardLine.friendPosition = linePosition.position
                 }
             }
         }
@@ -120,7 +126,7 @@ object MapHelper {
             linePositions.forEach { linePosition ->
                 val minionLine = linePosition.mapLine
                 if (findHelper.isEnemy(wizard.faction, minion)) {
-                    if (minionLine.enemyPosition == null || (minionLine.enemyPosition ?: minionLine.lineLength) < linePosition.position)
+                    if (minionLine.enemyPosition == null || (minionLine.enemyPosition ?: minionLine.lineLength) > linePosition.position)
                         minionLine.enemyPosition = linePosition.position
                 } else {
                     if (minionLine.friendPosition == null || (minionLine.friendPosition ?: 0.0) < linePosition.position)
