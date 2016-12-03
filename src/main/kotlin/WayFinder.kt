@@ -129,7 +129,7 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
 
     private fun getUnitDistance(unit: LivingUnit): Double {
         if (isFractionBase(unit)) {
-            return unit.radius + MIN_CLOSEST_RANGE * 10
+            return unit.radius + MIN_CLOSEST_BASE_RANGE
         }
 
         return unit.radius
@@ -190,6 +190,8 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
         private val TREE_MULTIPLIER_FACTOR_BIG_TREE = 15.0
 
         private val MAX_TREE_COUNT = 2.0
+
+        private val MIN_CLOSEST_BASE_RANGE = 15.0
     }
 
 }

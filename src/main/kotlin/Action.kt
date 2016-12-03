@@ -136,7 +136,8 @@ abstract class Action {
             val enemyWithBiggestHP = enemiesLookingToMe
                     .maxBy { it.life } ?: return false
 
-            val hpIsLow = self.life < self.maxLife * MULTI_ENEMY_LOW_HP_FACTOR && self.life * MULTI_ENEMY_LOW_HP_BIGGER_HP_FACTOR < enemyWithBiggestHP.life
+            val hpIsLow = self.life < self.maxLife * MULTI_ENEMY_LOW_HP_FACTOR ||
+                    self.life * MULTI_ENEMY_LOW_HP_BIGGER_HP_FACTOR < enemyWithBiggestHP.life
 
             if (hpIsLow)
                 multiEnemiesCondition = true
