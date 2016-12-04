@@ -18,7 +18,6 @@ class ShootHelper(private val self: Wizard, private val game: Game, private val 
             val isSkillesNotEmpty = self.getSkills().isNotEmpty()
 
             if (isSkillesNotEmpty && nearestTarget !is Tree) {
-
                 if (canShootByFireboll(nearestTarget)) {
                     move.action = ActionType.FIREBALL
                     missleRadius = game.fireballRadius
@@ -26,12 +25,20 @@ class ShootHelper(private val self: Wizard, private val game: Game, private val 
                     move.action = ActionType.FROST_BOLT
                     missleRadius = game.frostBoltRadius
                 } else {
-                    move.action = ActionType.MAGIC_MISSILE
+                    if (self.getDistanceTo(nearestTarget) <= game.staffRange)
+                        move.action = ActionType.STAFF
+                    else
+                        move.action = ActionType.MAGIC_MISSILE
+
                     missleRadius = game.magicMissileRadius
                 }
 
             } else {
-                move.action = ActionType.MAGIC_MISSILE
+                if (self.getDistanceTo(nearestTarget) <= game.staffRange)
+                    move.action = ActionType.STAFF
+                else
+                    move.action = ActionType.MAGIC_MISSILE
+
                 missleRadius = game.magicMissileRadius
             }
 

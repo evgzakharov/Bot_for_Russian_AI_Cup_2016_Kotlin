@@ -95,7 +95,7 @@ class StrategyManager {
 
         val selfSkils = self.getSkills().toList()
 
-        val skillsToLearn = skillesToLearnFrost
+        val skillsToLearn = skillesToLearnFrostV2
                 .filter { selfSkils.isEmpty() || !selfSkils.contains(it) }
                 .first()
 
@@ -274,7 +274,7 @@ class StrategyManager {
         const val TRY_TO_KILL_ENEMY_RADIUS: Double = 500.0
 
         const val TRY_TO_CATCH_ARTIFACT_DISTANCE: Double = 150.0
-        const val TRY_TO_CATCH_ARTIFACT_DISTANCE2: Double = 1500.0
+        const val TRY_TO_CATCH_ARTIFACT_DISTANCE2: Double = 1000.0
 
         const val BONUS_UPDATE_TICK: Int = 2500
 
@@ -314,6 +314,34 @@ class StrategyManager {
                 SkillType.RANGE_BONUS_PASSIVE_2,
                 SkillType.RANGE_BONUS_AURA_2,
                 SkillType.ADVANCED_MAGIC_MISSILE,
+                SkillType.HASTE
+        )
+
+        val skillesToLearnFrostV2: List<SkillType> = listOf(
+                SkillType.MAGICAL_DAMAGE_BONUS_PASSIVE_1,
+                SkillType.MAGICAL_DAMAGE_BONUS_AURA_1,
+                SkillType.MAGICAL_DAMAGE_BONUS_PASSIVE_2,
+                SkillType.MAGICAL_DAMAGE_BONUS_AURA_2,
+                SkillType.FROST_BOLT,
+                SkillType.MAGICAL_DAMAGE_ABSORPTION_PASSIVE_1,
+                SkillType.MAGICAL_DAMAGE_ABSORPTION_AURA_1,
+                SkillType.MAGICAL_DAMAGE_ABSORPTION_PASSIVE_2,
+                SkillType.MAGICAL_DAMAGE_ABSORPTION_AURA_2,
+                SkillType.SHIELD,
+                SkillType.RANGE_BONUS_PASSIVE_1,
+                SkillType.RANGE_BONUS_AURA_1,
+                SkillType.RANGE_BONUS_PASSIVE_2,
+                SkillType.RANGE_BONUS_AURA_2,
+                SkillType.ADVANCED_MAGIC_MISSILE,
+                SkillType.STAFF_DAMAGE_BONUS_PASSIVE_1,
+                SkillType.STAFF_DAMAGE_BONUS_AURA_1,
+                SkillType.STAFF_DAMAGE_BONUS_PASSIVE_2,
+                SkillType.STAFF_DAMAGE_BONUS_AURA_2,
+                SkillType.FIREBALL,
+                SkillType.MOVEMENT_BONUS_FACTOR_PASSIVE_1,
+                SkillType.MOVEMENT_BONUS_FACTOR_AURA_1,
+                SkillType.MOVEMENT_BONUS_FACTOR_PASSIVE_2,
+                SkillType.MOVEMENT_BONUS_FACTOR_AURA_2,
                 SkillType.HASTE
         )
 

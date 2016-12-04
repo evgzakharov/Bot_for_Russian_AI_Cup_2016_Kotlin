@@ -185,7 +185,7 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
 
     companion object {
 
-        private val MAX_RANGE = 200.0
+        private val MAX_RANGE = 150.0
 
         private val WIZARD_RADIUS_FACTOR: Double = 0.6
 
@@ -198,13 +198,13 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
         private val MULTIPLIER_FACTOR_DIFF_V2 = 6
 
         private val MULTIPLIER_FACTOR = 2.0
-        private val MULTIPLIER_FACTOR_V2 = 6.0
+        private val MULTIPLIER_FACTOR_V2 = 2.0
 
         private val MINIMUM_TREE_RADIUS: Double = 15.0
         private val TREE_MULTIPLIER_FACTOR_SMALL_TREE = 5.0
         private val TREE_MULTIPLIER_FACTOR_BIG_TREE = 15.0
 
-        private val MAX_TREE_COUNT = 2.0
+        private val MAX_TREE_COUNT = 5.0
 
         private val MIN_CLOSEST_BASE_RANGE = 10.0
     }
