@@ -75,7 +75,7 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
 
                     val newPathCount = (stepMatrix.pathCount + step * distanceMultiplier * treeMultiplier).toFloat()
 
-                    if (newPathCount > TREE_MULTIPLIER_FACTOR_BIG_TREE)
+                    if (newPathCount > TREE_MULTIPLIER_FACTOR_BIG_TREE * MAX_TREE_COUNT)
                         continue
 
                     if (stepMatrix.matrixPoints!!.keys.contains(matrixPoint)) {
@@ -204,9 +204,9 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
         private val TREE_MULTIPLIER_FACTOR_SMALL_TREE = 5.0
         private val TREE_MULTIPLIER_FACTOR_BIG_TREE = 15.0
 
-        private val MAX_TREE_COUNT = 2.0
+        private val MAX_TREE_COUNT = 3.0
 
-        private val MIN_CLOSEST_BASE_RANGE = 15.0
+        private val MIN_CLOSEST_BASE_RANGE = 10.0
     }
 
 }

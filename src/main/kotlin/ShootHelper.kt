@@ -66,7 +66,7 @@ class ShootHelper(private val self: Wizard, private val game: Game, private val 
         return when (nearestTarget) {
             is Tree, is Building -> false
             is Wizard -> true
-            is Minion -> self.mana > self.maxMana * MIN_MANA_FACTOR
+            is Minion -> self.mana > self.maxMana * MIN_MANA_FACTOR && nearestTarget.life >= game.frostBoltDirectDamage
             else -> false
         }
     }

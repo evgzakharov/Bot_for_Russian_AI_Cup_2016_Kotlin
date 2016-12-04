@@ -270,7 +270,7 @@ object MapHelper {
         else
             MOVE_FORWARD
 
-        lastPointToMove = getPointInLine(newPointToMove.first, newPointToMove.second + movingDiff)
+        lastPointToMove = getPointInLine(newPointToMove.first, max(newPointToMove.second + movingDiff, 0.0))
 
         return lastPointToMove!!
     }
@@ -345,10 +345,10 @@ object MapHelper {
 
     val DEAD_TOWER_HP_FACTOR = 0.1
 
-    val START_POINT_POSITON = 300.0
+    val START_POINT_POSITON = 400.0
 
     val MOVE_FORWARD = 100.0
-    val MOVE_BACKWARD = -100.0
+    val MOVE_BACKWARD = -300.0
 
     val LINE_BACK_FACTOR: Double = 0.5
 
@@ -361,7 +361,7 @@ object MapHelper {
 
 fun MutableMap<Long, HistoryValue>.filterByTick(currentTick: Int) {
     val iterator = this.iterator()
-    while(iterator.hasNext()){
+    while (iterator.hasNext()) {
         val currentValue = iterator.next()
 
         if (currentTick - currentValue.value.tick > HISTORY_TICK_COUNT)

@@ -35,8 +35,8 @@ abstract class Action {
 
     open fun move(target: Any?): Boolean {
         val veryCloseTree = findHelper.getAllTrees()
-                .filter { tree -> self.getDistanceTo(tree) <= self.radius * 2 + tree.radius }
-                .minBy { self.getAngleTo(it) }
+                .filter { tree -> self.getDistanceTo(tree) <= self.radius + tree.radius + MIN_CLOSEST_TREE_DISTANCE }
+                .minBy { abs(self.getAngleTo(it)) }
 
         veryCloseTree?.let { tree -> shootHelder.shootToTarget(veryCloseTree) }
 
@@ -185,6 +185,8 @@ abstract class Action {
         val SINGLE_ENEMY_LOG_HP_ENEMY_FACTOR = 0.9
         val SINGLE_ENEMY_CLOSE_RANGE_FACTOR = 0.8
         val SINGLE_ENEMY_STAFF_FACTOR = 1.2
+
+        val MIN_CLOSEST_TREE_DISTANCE: Double = 20.0
 
     }
 }

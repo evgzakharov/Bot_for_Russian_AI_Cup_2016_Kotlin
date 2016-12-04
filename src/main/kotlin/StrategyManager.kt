@@ -191,7 +191,6 @@ class StrategyManager {
                             ((line.deadFriendTowerCount >= 1
                                     && line.enemyWizardPositions.isNotEmpty()
                                     && line.historyFriendWizardPositions.toData().values.all { it < line.lineLength * LINE_MIN_DEFENCE_FACTOR }))
-                            || (line.deadFriendTowerCount == 2 && line.enemyWizardPositions.isNotEmpty())
                 }
                 .minBy { line -> line.enemyWizardPositions.values.min() ?: line.lineLength }
                 ?.let { it.laneType }
@@ -206,20 +205,20 @@ class StrategyManager {
         if (world.tickIndex - lastLaneAttackChangeTick <= MIN_CHANGE_ATTACK_TICK_LIMIT)
             return null
 
-        val enemyWizardsInFriendLines = attackLines.map { it.value.friend }
-                .fold(0) { sum, value -> sum + value.enemyWizardPositions.size }
-
-        if (enemyWizardsInFriendLines == 0) {
-            val lineToAttack = attackLines
-                    .values
-                    .filter { it.enemy.deadEnemyTowerCount == 2 }
-                    .sortedByDescending { it.enemy.enemyWizardPositions.size }
-                    .map { it.enemy.laneType }
-                    .firstOrNull()
-
-            if (lineToAttack != null)
-                return lineToAttack
-        }
+//        val enemyWizardsInFriendLines = attackLines.map { it.value.friend }
+//                .fold(0) { sum, value -> sum + value.enemyWizardPositions.size }
+//
+//        if (enemyWizardsInFriendLines == 0) {
+//            val lineToAttack = attackLines
+//                    .values
+//                    .filter { it.enemy.deadEnemyTowerCount == 2 }
+//                    .sortedByDescending { it.enemy.enemyWizardPositions.size }
+//                    .map { it.enemy.laneType }
+//                    .firstOrNull()
+//
+//            if (lineToAttack != null)
+//                return lineToAttack
+//        }
 
         //or attack on line without wizards
         val lineWithoutFriendWizards = attackLines
@@ -230,14 +229,14 @@ class StrategyManager {
             return lineWithoutFriendWizards.firstOrNull()
 
 
-        //or attack line, there are friend wizards less when enemy wizards
-        val enemyMostKillingLine = mapLines.shouldChangeLine { line ->
-            line.enemy == true
-                    && attackLines[currentLaneType]!!.friendWizards().size < line.historyEnemyWizardPositions.size
-                    && line.deadEnemyTowerCount > 0
-        }
-        if (enemyMostKillingLine != null)
-            return enemyMostKillingLine
+//        //or attack line, there are friend wizards less when enemy wizards
+//        val enemyMostKillingLine = mapLines.shouldChangeLine { line ->
+//            line.enemy == true
+//                    && attackLines[currentLaneType]!!.friendWizards().size < line.historyEnemyWizardPositions.size
+//                    && line.deadEnemyTowerCount > 0
+//        }
+//        if (enemyMostKillingLine != null)
+//            return enemyMostKillingLine
 
         return null
     }
