@@ -103,7 +103,7 @@ object MapHelper {
                     wizardLine.enemyWizardPositions.put(wizardId, linePosition.position)
                     wizardLine.historyEnemyWizardPositions.put(wizardId, HistoryValue(world.tickIndex, linePosition.position))
 
-                    if (wizardLine.enemyPosition == null || (wizardLine.enemyPosition ?: wizardLine.lineLength) < linePosition.position)
+                    if (wizardLine.enemyPosition == null || (wizardLine.enemyPosition ?: wizardLine.lineLength) > linePosition.position)
                         wizardLine.enemyPosition = linePosition.position
                 } else {
                     wizardLine.friendWizardPositions.put(wizardId, linePosition.position)
