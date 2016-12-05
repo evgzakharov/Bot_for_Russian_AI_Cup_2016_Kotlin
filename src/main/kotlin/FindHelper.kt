@@ -9,6 +9,8 @@ import java.lang.StrictMath.abs
 
 class FindHelper(private val world: World, private val game: Game, private val wizard: Wizard) {
 
+    private val skillHelper: SkillHelper = SkillHelper(game, wizard)
+
     fun getAllUnits(withTrees: Boolean, onlyEnemy: Boolean, onlyNearest: Boolean, withNeutrals: Boolean): List<LivingUnit> {
         val cacheKey = listOf(withTrees, onlyEnemy, onlyNearest, withNeutrals)
         if (allUnitsCache[cacheKey] != null) return allUnitsCache[cacheKey]!!
@@ -130,7 +132,7 @@ class FindHelper(private val world: World, private val game: Game, private val w
 
         val nearestMovingNeutrals = getNearestTarget(getAllMovingNeutrals())
 
-        if (nearestMovingNeutrals!=null) return nearestMovingNeutrals
+        if (nearestMovingNeutrals != null) return nearestMovingNeutrals
 
         return null
     }
@@ -146,7 +148,8 @@ class FindHelper(private val world: World, private val game: Game, private val w
 
             val distance = wizard.getDistanceTo(target)
 
-            if (distance <= wizard.castRange) {
+            if (distance <= wizard.castRange ||
+                    (target is Wizard && skillHelper.isFirebollActive() && distance <= wizard.castRange + game.fireballExplosionMinDamageRange)) {
                 nearestTargets.add(target)
             }
         }
