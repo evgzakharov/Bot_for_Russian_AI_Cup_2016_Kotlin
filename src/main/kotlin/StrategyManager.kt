@@ -18,6 +18,7 @@ class StrategyManager {
     lateinit var move: Move
     lateinit var findHelper: FindHelper
     lateinit var moveHelper: MoveHelper
+    lateinit var skillsHelper: SkillHelper
 
     var actionMode: ActionMode = ActionMode.ATTACK
         private set
@@ -44,6 +45,7 @@ class StrategyManager {
         this.move = move
         this.findHelper = FindHelper(world, game, self)
         this.moveHelper = MoveHelper(self, world, game, move)
+        this.skillsHelper = SkillHelper(game, self)
         MapHelper.nextTick(world, game, self)
 
         initializeDefault()
@@ -188,9 +190,9 @@ class StrategyManager {
         val defenceLine = mapLines
                 .filter { line ->
                     line.enemy == false &&
-                            ((line.deadFriendTowerCount >= 1
+                            ((line.deadFriendTowerCount == 2
                                     && line.enemyWizardPositions.isNotEmpty()
-                                    && line.historyFriendWizardPositions.toData().values.all { it < line.lineLength * LINE_MIN_DEFENCE_FACTOR }))
+                                    && line.enemyPosition ?: Double.MAX_VALUE <= line.lineLength * LINE_MIN_DEFENCE_FACTOR))
                 }
                 .minBy { line -> line.enemyWizardPositions.values.min() ?: line.lineLength }
                 ?.let { it.laneType }
@@ -205,38 +207,24 @@ class StrategyManager {
         if (world.tickIndex - lastLaneAttackChangeTick <= MIN_CHANGE_ATTACK_TICK_LIMIT)
             return null
 
-//        val enemyWizardsInFriendLines = attackLines.map { it.value.friend }
-//                .fold(0) { sum, value -> sum + value.enemyWizardPositions.size }
-//
-//        if (enemyWizardsInFriendLines == 0) {
-//            val lineToAttack = attackLines
-//                    .values
-//                    .filter { it.enemy.deadEnemyTowerCount == 2 }
-//                    .sortedByDescending { it.enemy.enemyWizardPositions.size }
-//                    .map { it.enemy.laneType }
-//                    .firstOrNull()
-//
-//            if (lineToAttack != null)
-//                return lineToAttack
-//        }
+        if (skillsHelper.isHasFireboll() || skillsHelper.isHasFrostBall()) {
+            val lineToAttack = attackLines
+                    .values
+                    .filter { it.enemy.deadEnemyTowerCount >= 1 }
+                    .sortedByDescending { it.enemy.friendWizardPositions.size }
+                    .map { it.enemy.laneType }
+                    .firstOrNull()
 
-        //or attack on line without wizards
-        val lineWithoutFriendWizards = attackLines
-                .mapValues { attackLine -> attackLine.value.friendWizards() }
-                .filter { it.value.isEmpty() }.keys
+            if (lineToAttack != null)
+                return lineToAttack
+        } else {
+            val lineWithoutFriendWizards = attackLines
+                    .mapValues { attackLine -> attackLine.value.friendWizards() }
+                    .filter { it.value.isEmpty() }.keys
 
-        if (lineWithoutFriendWizards.isNotEmpty() && attackLines[currentLaneType!!]!!.friendWizards().size > 1)
-            return lineWithoutFriendWizards.firstOrNull()
-
-
-//        //or attack line, there are friend wizards less when enemy wizards
-//        val enemyMostKillingLine = mapLines.shouldChangeLine { line ->
-//            line.enemy == true
-//                    && attackLines[currentLaneType]!!.friendWizards().size < line.historyEnemyWizardPositions.size
-//                    && line.deadEnemyTowerCount > 0
-//        }
-//        if (enemyMostKillingLine != null)
-//            return enemyMostKillingLine
+            if (lineWithoutFriendWizards.isNotEmpty() && attackLines[currentLaneType!!]!!.friendWizards().size > 1)
+                return lineWithoutFriendWizards.firstOrNull()
+        }
 
         return null
     }
@@ -280,8 +268,8 @@ class StrategyManager {
 
         const val MIN_START_CHANGE_TICK: Int = 500
 
-        const val MIN_CHANGE_DEFENCE_TICK_LIMIT: Int = 300
-        const val MIN_CHANGE_ATTACK_TICK_LIMIT: Int = 2500
+        const val MIN_CHANGE_DEFENCE_TICK_LIMIT: Int = 500
+        const val MIN_CHANGE_ATTACK_TICK_LIMIT: Int = 3500
 
         const val LINE_POSITION_MULTIPLIER: Double = 0.2
 
