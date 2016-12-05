@@ -45,7 +45,7 @@ class ShootHelper(private val self: Wizard, private val game: Game, private val 
         return when (nearestTarget) {
             is Tree -> false
             is Wizard, is Building -> true
-            is Minion -> self.mana > self.maxMana * MIN_MANA_FACTOR
+            is Minion -> self.mana > self.maxMana * MIN_MINION_MANA_FACTOR
             else -> false
         }
     }
@@ -57,13 +57,13 @@ class ShootHelper(private val self: Wizard, private val game: Game, private val 
         return when (nearestTarget) {
             is Tree, is Building -> false
             is Wizard -> true
-            is Minion -> self.mana > self.maxMana * MIN_MANA_FACTOR && nearestTarget.life >= game.frostBoltDirectDamage
+            is Minion -> self.mana > self.maxMana * MIN_MINION_MANA_FACTOR && nearestTarget.life >= game.frostBoltDirectDamage
             else -> false
         }
     }
 
     companion object {
-        val MIN_MANA_FACTOR: Double = 0.5
+        val MIN_MINION_MANA_FACTOR: Double = 0.6
 
         val MIN_CAST_RANGE: Double = 1.0
     }

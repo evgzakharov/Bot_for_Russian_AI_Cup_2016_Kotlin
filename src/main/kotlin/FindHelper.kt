@@ -68,8 +68,41 @@ class FindHelper(private val world: World, private val game: Game, private val w
 
         if (allBuldings[cacheKey] != null) return allBuldings[cacheKey]!!
 
-        val newUnits = world.getBuildings()
-                .filter { filterLivingUnits(it, onlyEnemy, false) }
+        val mapSize = game.mapSize
+
+        val enemyNotVisionBuildings = world.getBuildings().filter {
+            !isEnemy(wizard.faction, it)
+        }.map {
+            Building(
+                    id = -1,
+                    x = mapSize - it.x,
+                    y = mapSize - it.y,
+                    speedX = 0.0,
+                    speedY = 0.0,
+                    angle = it.angle,
+                    faction = if (wizard.faction == Faction.ACADEMY) Faction.RENEGADES else Faction.ACADEMY,
+                    radius = it.radius,
+                    life = 100,
+                    maxLife = it.life,
+                    statuses = emptyArray(),
+                    type = it.type,
+                    visionRange = it.visionRange,
+                    attackRange = it.attackRange,
+                    cooldownTicks = 0,
+                    remainingActionCooldownTicks = 0,
+                    damage = 100500)
+        }
+
+        val (enemyBuldings, notEnemyBuildings) = world.getBuildings().toList()
+                .partition { isEnemy(wizard.faction, it) }
+
+        val resultEnemyBuldings = enemyNotVisionBuildings
+                .filter { building ->
+                    enemyBuldings.none { it.getDistanceTo(building) <= MIN_CLOSEST_DISTANCE }
+                    MapHelper.deadGuardTowers.values.none { it.getDistanceTo(building) <= MIN_CLOSEST_DISTANCE }
+                } + enemyBuldings
+
+        val newUnits = if (onlyEnemy) resultEnemyBuldings else resultEnemyBuldings + notEnemyBuildings
 
         allBuldings.put(cacheKey, newUnits)
 
@@ -178,5 +211,7 @@ class FindHelper(private val world: World, private val game: Game, private val w
         }
 
         val CAST_RANGE_FACTOR: Double = 1.3
+
+        val MIN_CLOSEST_DISTANCE: Double = 15.0
     }
 }
