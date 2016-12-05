@@ -109,7 +109,7 @@ abstract class Action {
 
     open protected fun singleEnemyCondition(enemyWizards: List<Wizard>): Boolean {
         val enemyWithSmallestHP = enemyWizards
-                .filter { unit -> self.getDistanceTo(unit) < unit.castRange }
+                .filter { unit -> self.getDistanceTo(unit) <= unit.castRange }
                 .minBy { it.life }
 
         var singleEnemyCondition = false
@@ -130,7 +130,7 @@ abstract class Action {
         val enemiesLookingToMe = enemyWizards
                 .filter { unit ->
                     val distanceTo = self.getDistanceTo(unit)
-                    distanceTo < unit.castRange * MULTI_ENEMY_CAST_RANGE_FACTOR && abs(unit.getAngleTo(self)) <= game.staffSector * MULTI_ENEMY_STAFF_SECTOR
+                    distanceTo <= unit.castRange * MULTI_ENEMY_CAST_RANGE_FACTOR && abs(unit.getAngleTo(self)) <= game.staffSector * MULTI_ENEMY_STAFF_SECTOR
                 }
 
         var multiEnemiesCondition = false
