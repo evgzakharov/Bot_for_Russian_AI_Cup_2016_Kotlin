@@ -19,7 +19,7 @@ class ShootHelper(private val self: Wizard, private val game: Game, private val 
 
             if (canShootByFireboll(nearestTarget)) {
                 move.action = ActionType.FIREBALL
-                missleRadius = game.fireballExplosionMinDamageRange
+                missleRadius = game.fireballExplosionMaxDamageRange
             } else if (canShootByFrostBolt(nearestTarget)) {
                 move.action = ActionType.FROST_BOLT
                 missleRadius = game.frostBoltRadius
@@ -40,7 +40,7 @@ class ShootHelper(private val self: Wizard, private val game: Game, private val 
     fun canShootByFireboll(nearestTarget: LivingUnit): Boolean {
         if (!skillHelper.isFirebollActive()) return false
 
-        if (self.getDistanceTo(nearestTarget) < game.fireballRadius) return false
+        if (self.castRange + game.fireballExplosionMaxDamageRange <= self.getDistanceTo(nearestTarget) - nearestTarget.radius) return false
 
         return when (nearestTarget) {
             is Tree -> false
