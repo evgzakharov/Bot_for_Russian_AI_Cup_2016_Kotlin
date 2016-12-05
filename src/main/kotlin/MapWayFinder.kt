@@ -156,8 +156,11 @@ class MapWayFinder(val world: World, val game: Game, private val wizard: Wizard)
         val mapLine = wayParams.startMapLine
 
         var furtherLines = mapLine.startLines
-        if (wayParams.startPoint == mapLine.endPoint)
+        var opositePoint = mapLine.endPoint
+        if (wayParams.startPoint == mapLine.endPoint) {
             furtherLines = mapLine.endLines
+            opositePoint = mapLine.startPoint
+        }
 
         val filteredFurtherLines: List<MapLine> = furtherLines
                 .filter { furtherLine -> !wayParams.checkedLines.contains(furtherLine) }
@@ -201,7 +204,7 @@ class MapWayFinder(val world: World, val game: Game, private val wizard: Wizard)
                             newWayLines.add(furtherLine)
 
                             var nextPoint = furtherLine.startPoint
-                            if (furtherLine.startPoint != wayParams.startMapLine.endPoint)
+                            if (furtherLine.startPoint == opositePoint)
                                 nextPoint = furtherLine.endPoint
 
                             val newWayParams = WayParams(
@@ -227,7 +230,7 @@ class MapWayFinder(val world: World, val game: Game, private val wizard: Wizard)
 
         val MAX_SELF_WAY_RANGE = 150
 
-        val MIN_TICK_DIFF_TO_FIND_POINT = 150
+        val MIN_TICK_DIFF_TO_FIND_POINT = 50
 
         val NEXT_LINE_DISTANCE: Double = 450.0
 
