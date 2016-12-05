@@ -8,49 +8,29 @@ class AttackAction : Action() {
 
         val selfStatuses = self.getStatuses().toList()
 
-        if (!selfStatuses.isEmpty() && !selfStatuses.none { it.type == StatusType.SHIELDED })
+        if (!selfStatuses.isEmpty() && !selfStatuses.none { it.type == StatusType.SHIELDED }
+                && self.life < self.maxLife * LOW_HP_FACTOR_WITHOUT_SHIELD)
             safeHelper.tryToSafeByShield(self)
 
-        val pointToMove = mapWayFinder.getPreviousWaypoint(strategyManager.currentLaneType!!)
-        if (self.life < self.maxLife * LOW_HP_FACTOR ||
-                (self.life < self.maxLife * LOW_HP_FACTOR_WITHOUT_FIREBOLL
-                        && !(skillHelper.isHasFireboll() || skillHelper.isHasFrostBall())
-                        && game.isSkillsEnabled)) {
-            if (self.getDistanceTo(MapHelper.friendBasePoint) < MIN_CLOSE_DISTANCE_TO_BASE) {
-                val nearestTarget = findHelper.getNearestTarget()
+        val nearestTarget = findHelper.getNearestTarget()
 
-                nearestTarget?.let { livingUnit ->
-                    shootToTarget = true
-                    shootHelder.shootToTarget(livingUnit)
-                }
+        val nextWaypoint: Point2D?
+        if (isNeedToMoveBack()) {
+            moveHelper.goWithoutTurn(mapWayFinder.getPreviousWaypoint(strategyManager.currentLaneType!!))
+
+            nearestTarget?.let { livingUnit ->
+                shootToTarget = true
+                shootHelder.shootToTarget(livingUnit)
             }
-
-            if (!shootToTarget)
-                moveHelper.goTo(pointToMove)
-
         } else {
-            val nearestTarget = findHelper.getNearestTarget()
+            nextWaypoint = mapWayFinder.getNextWaypoint(strategyManager.currentLaneType!!, strategyManager.globalStrateg)
+            moveHelper.goWithoutTurn(nextWaypoint)
 
-            val nextWaypoint: Point2D?
-            if (isNeedToMoveBack()) {
-                if (self.life < self.maxLife * 0.7) safeHelper.tryToSafeByShield(self)
-
-                moveHelper.goWithoutTurn(mapWayFinder.getPreviousWaypoint(strategyManager.currentLaneType!!))
-
-                nearestTarget?.let { livingUnit ->
-                    shootToTarget = true
-                    shootHelder.shootToTarget(livingUnit)
-                }
-            } else {
-                nextWaypoint = mapWayFinder.getNextWaypoint(strategyManager.currentLaneType!!, strategyManager.globalStrateg)
-                moveHelper.goWithoutTurn(nextWaypoint)
-
-                if (nearestTarget != null) {
-                    shootToTarget = true
-                    shootHelder.shootToTarget(nearestTarget)
-                } else
-                    moveHelper.goTo(nextWaypoint)
-            }
+            if (nearestTarget != null) {
+                shootToTarget = true
+                shootHelder.shootToTarget(nearestTarget)
+            } else
+                moveHelper.goTo(nextWaypoint)
         }
 
         if (!shootToTarget)
@@ -61,5 +41,7 @@ class AttackAction : Action() {
 
     companion object {
         val MIN_CLOSE_DISTANCE_TO_BASE: Double = 300.0
+
+        val LOW_HP_FACTOR_WITHOUT_SHIELD: Double = 0.7
     }
 }

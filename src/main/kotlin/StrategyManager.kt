@@ -97,7 +97,7 @@ class StrategyManager {
 
         val selfSkils = self.getSkills().toList()
 
-        val skillsToLearn = skillesToLearnFrostV3
+        val skillsToLearn = skillesToLearnFire
                 .filter { selfSkils.isEmpty() || !selfSkils.contains(it) }
                 .first()
 
@@ -207,7 +207,7 @@ class StrategyManager {
         if (world.tickIndex - lastLaneAttackChangeTick <= MIN_CHANGE_ATTACK_TICK_LIMIT)
             return null
 
-        if (skillsHelper.isHasFireboll() || skillsHelper.isHasFrostBall()) {
+        if (skillsHelper.isHasSomeAttackSpell() && world.tickIndex > MIN__ATTACK_TICK_LIMIT) {
             val lineToAttack = attackLines
                     .values
                     .filter { it.enemy.deadEnemyTowerCount >= 1 }
@@ -270,6 +270,7 @@ class StrategyManager {
 
         const val MIN_CHANGE_DEFENCE_TICK_LIMIT: Int = 500
         const val MIN_CHANGE_ATTACK_TICK_LIMIT: Int = 3500
+        const val MIN__ATTACK_TICK_LIMIT: Int = 3500
 
         const val LINE_POSITION_MULTIPLIER: Double = 0.2
 

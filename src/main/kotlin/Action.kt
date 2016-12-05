@@ -110,8 +110,16 @@ abstract class Action {
     }
 
     open protected fun singleEnemyCondition(enemyWizards: List<Wizard>): Boolean {
+        val hpIsVeryLow = self.life < SINGLE_VERY_LOW_ENEMY_HP_FACTOR * self.maxLife
+
+        val hpIsLowAndNotHaveSpell = self.life < SINGLE_LOW_HP_WITHOUT_SPELL * self.maxLife &&
+                game.isSkillsEnabled && !skillHelper.isHasSomeAttackSpell()
+
+        val rangeFactor = if (hpIsVeryLow || hpIsLowAndNotHaveSpell) LOW_HP_RANGE_FACTOR
+        else 1.0
+
         val enemyWithSmallestHP = enemyWizards
-                .filter { unit -> self.getDistanceTo(unit) <= unit.castRange }
+                .filter { unit -> self.getDistanceTo(unit) <= unit.castRange * rangeFactor }
                 .minBy { it.life }
 
         var singleEnemyCondition = false
@@ -122,17 +130,23 @@ abstract class Action {
                     && self.life * SINGLE_ENEMY_LOG_HP_ENEMY_FACTOR < enemyWithSmallestHP.life
                     && enemyWithSmallestHP.getAngleTo(self) <= game.staffSector * SINGLE_ENEMY_STAFF_FACTOR
 
-            if (enemyIsToClose || hpIsToLow)
+            if (enemyIsToClose || hpIsToLow || hpIsVeryLow || hpIsLowAndNotHaveSpell)
                 singleEnemyCondition = true
         }
         return singleEnemyCondition
     }
 
     open protected fun multiEnemiesCondition(enemyWizards: List<Wizard>): Boolean {
+        val hpIsLowAndNotHaveSpell = self.life < SINGLE_LOW_HP_WITHOUT_SPELL * self.maxLife &&
+                game.isSkillsEnabled && !skillHelper.isHasSomeAttackSpell()
+
+        val rangeFactor = if (hpIsLowAndNotHaveSpell) LOW_HP_RANGE_FACTOR
+        else 1.0
+
         val enemiesLookingToMe = enemyWizards
                 .filter { unit ->
                     val distanceTo = self.getDistanceTo(unit)
-                    distanceTo <= unit.castRange * MULTI_ENEMY_CAST_RANGE_FACTOR && abs(unit.getAngleTo(self)) <= game.staffSector * MULTI_ENEMY_STAFF_SECTOR
+                    distanceTo <= unit.castRange * MULTI_ENEMY_CAST_RANGE_FACTOR * rangeFactor && abs(unit.getAngleTo(self)) <= game.staffSector * MULTI_ENEMY_STAFF_SECTOR
                 }
 
         var multiEnemiesCondition = false
@@ -169,8 +183,6 @@ abstract class Action {
 
         val LOW_HP_FACTOR = 0.25
 
-        val LOW_HP_FACTOR_WITHOUT_FIREBOLL = 0.45
-
         val LOW_HP_NEAREST_TOWER_FACTOR = 0.4
         val LOW_HP_NEAREST_BASE_FACTOR = 0.5
 
@@ -193,6 +205,11 @@ abstract class Action {
         val SINGLE_ENEMY_STAFF_FACTOR = 1.2
 
         val MIN_CLOSEST_TREE_DISTANCE: Double = 20.0
+
+        val SINGLE_VERY_LOW_ENEMY_HP_FACTOR: Double = 0.25
+        val SINGLE_LOW_HP_WITHOUT_SPELL: Double = 0.6
+
+        val LOW_HP_RANGE_FACTOR: Double = 1.3
 
     }
 }

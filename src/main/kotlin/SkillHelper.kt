@@ -2,14 +2,18 @@ import model.*
 
 class SkillHelper(private val game: Game, private val self: Wizard) {
 
-    fun isHasFireboll(): Boolean {
+    fun hasFireboll(): Boolean {
         return self.getSkills().isNotEmpty()
                 && self.getSkills().contains(SkillType.FIREBALL)
     }
 
-    fun isHasFrostBall(): Boolean {
+    fun hasFrostboll(): Boolean {
         return self.getSkills().isNotEmpty()
                 && self.getSkills().contains(SkillType.FROST_BOLT)
+    }
+
+    fun isHasSomeAttackSpell(): Boolean {
+        return !game.isSkillsEnabled || hasFireboll() || hasFrostboll()
     }
 
     fun isFirebollActive(): Boolean {
