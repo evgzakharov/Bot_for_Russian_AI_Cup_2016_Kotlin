@@ -209,7 +209,7 @@ class StrategyManager {
         if (world.tickIndex - lastLaneAttackChangeTick <= MIN_CHANGE_ATTACK_TICK_LIMIT)
             return null
 
-        if (skillsHelper.isHasSomeAttackSpell() && world.tickIndex > MIN__ATTACK_TICK_LIMIT) {
+        if ((skillsHelper.isHasSomeAttackSpell() || !game.isSkillsEnabled) && world.tickIndex > MIN__ATTACK_TICK_LIMIT) {
             val lineToAttack = attackLines
                     .values
                     .filter { it.enemy.deadEnemyTowerCount >= 1 }

@@ -13,7 +13,7 @@ class SkillHelper(private val game: Game, private val self: Wizard) {
     }
 
     fun isHasSomeAttackSpell(): Boolean {
-        return !game.isSkillsEnabled || hasFireboll() || hasFrostboll()
+        return hasFireboll() || hasFrostboll()
     }
 
     fun isFirebollActive(): Boolean {
