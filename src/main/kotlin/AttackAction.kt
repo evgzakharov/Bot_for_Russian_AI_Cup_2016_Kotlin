@@ -1,7 +1,4 @@
-import model.ActionType
-import model.LivingUnit
-import model.Tree
-import model.Wizard
+import model.*
 import java.util.Optional
 
 
@@ -9,10 +6,13 @@ class AttackAction : Action() {
     override fun move(target: Any?): Boolean {
         var shootToTarget: Boolean = false
 
-        val pointToMove = mapWayFinder.getPreviousWaypoint(strategyManager.currentLaneType!!)
-        if (self.life < self.maxLife * Action.Companion.LOW_HP_FACTOR) {
+        val selfStatuses = self.getStatuses().toList()
+
+        if (!selfStatuses.isEmpty() && !selfStatuses.none { it.type == StatusType.SHIELDED })
             safeHelper.tryToSafeByShield(self)
 
+        val pointToMove = mapWayFinder.getPreviousWaypoint(strategyManager.currentLaneType!!)
+        if (self.life < self.maxLife * Action.Companion.LOW_HP_FACTOR) {
             if (self.getDistanceTo(MapHelper.friendBasePoint) < MIN_CLOSE_DISTANCE_TO_BASE) {
                 val nearestTarget = findHelper.getNearestTarget()
 
