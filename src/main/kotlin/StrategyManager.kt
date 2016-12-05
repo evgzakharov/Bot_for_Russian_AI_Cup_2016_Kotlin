@@ -95,7 +95,7 @@ class StrategyManager {
 
         val selfSkils = self.getSkills().toList()
 
-        val skillsToLearn = skillesToLearnFire
+        val skillsToLearn = skillesToLearnFrostV3
                 .filter { selfSkils.isEmpty() || !selfSkils.contains(it) }
                 .first()
 
@@ -380,16 +380,16 @@ class StrategyManager {
                 SkillType.STAFF_DAMAGE_BONUS_PASSIVE_2,
                 SkillType.STAFF_DAMAGE_BONUS_AURA_2,
                 SkillType.FIREBALL,
-                SkillType.MAGICAL_DAMAGE_BONUS_PASSIVE_1,
-                SkillType.MAGICAL_DAMAGE_BONUS_AURA_1,
-                SkillType.MAGICAL_DAMAGE_BONUS_PASSIVE_2,
-                SkillType.MAGICAL_DAMAGE_BONUS_AURA_2,
-                SkillType.FROST_BOLT,
                 SkillType.MAGICAL_DAMAGE_ABSORPTION_PASSIVE_1,
                 SkillType.MAGICAL_DAMAGE_ABSORPTION_AURA_1,
                 SkillType.MAGICAL_DAMAGE_ABSORPTION_PASSIVE_2,
                 SkillType.MAGICAL_DAMAGE_ABSORPTION_AURA_2,
                 SkillType.SHIELD,
+                SkillType.MAGICAL_DAMAGE_BONUS_PASSIVE_1,
+                SkillType.MAGICAL_DAMAGE_BONUS_AURA_1,
+                SkillType.MAGICAL_DAMAGE_BONUS_PASSIVE_2,
+                SkillType.MAGICAL_DAMAGE_BONUS_AURA_2,
+                SkillType.FROST_BOLT,
                 SkillType.MOVEMENT_BONUS_FACTOR_PASSIVE_1,
                 SkillType.MOVEMENT_BONUS_FACTOR_AURA_1,
                 SkillType.MOVEMENT_BONUS_FACTOR_PASSIVE_2,
