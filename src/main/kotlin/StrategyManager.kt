@@ -97,7 +97,7 @@ class StrategyManager {
 
         val selfSkils = self.getSkills().toList()
 
-        val skillsToLearn = skillesToLearnFire
+        val skillsToLearn = skillesToLearnFrostV3
                 .filter { selfSkils.isEmpty() || !selfSkils.contains(it) }
                 .first()
 
@@ -192,6 +192,8 @@ class StrategyManager {
                     line.enemy == false &&
                             ((line.deadFriendTowerCount == 2
                                     && line.enemyWizardPositions.isNotEmpty()
+                                    && line.friendWizardPositions.size <= 2
+                                    && line.enemyWizardPositions.size > line.friendWizardPositions.size
                                     && line.enemyPosition ?: Double.MAX_VALUE <= line.lineLength * LINE_MIN_DEFENCE_FACTOR))
                 }
                 .minBy { line -> line.enemyWizardPositions.values.min() ?: line.lineLength }

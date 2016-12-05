@@ -209,7 +209,7 @@ abstract class Action {
         val SINGLE_VERY_LOW_ENEMY_HP_FACTOR: Double = 0.25
         val SINGLE_LOW_HP_WITHOUT_SPELL: Double = 0.6
 
-        val LOW_HP_RANGE_FACTOR: Double = 1.3
+        val LOW_HP_RANGE_FACTOR: Double = 1.4
 
     }
 }

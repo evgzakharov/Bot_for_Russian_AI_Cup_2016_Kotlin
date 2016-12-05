@@ -206,7 +206,7 @@ class WayFinder(private val wizard: Wizard, private val world: World, private va
 
         private val MAX_TREE_COUNT = 5.0
 
-        private val MIN_CLOSEST_BASE_RANGE = 11.0
+        private val MIN_CLOSEST_BASE_RANGE = 12.0
     }
 
 }
