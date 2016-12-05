@@ -19,6 +19,7 @@ abstract class Action {
     protected lateinit var mapWayFinder: MapWayFinder
     protected lateinit var strategyManager: StrategyManager
     protected lateinit var safeHelper: SafeHelper
+    protected lateinit var skillHelper: SkillHelper
 
     fun init(self: Wizard, world: World, game: Game, move: Move, strategyManager: StrategyManager) {
         this.self = self
@@ -31,6 +32,7 @@ abstract class Action {
         this.mapWayFinder = MapWayFinder(world, game, self)
         this.strategyManager = strategyManager
         this.safeHelper = SafeHelper(self, game, move)
+        this.skillHelper = SkillHelper(game, self)
     }
 
     open fun move(target: Any?): Boolean {
@@ -166,6 +168,8 @@ abstract class Action {
     companion object {
 
         val LOW_HP_FACTOR = 0.25
+
+        val LOW_HP_FACTOR_WITHOUT_FIREBOLL = 0.45
 
         val LOW_HP_NEAREST_TOWER_FACTOR = 0.4
         val LOW_HP_NEAREST_BASE_FACTOR = 0.5

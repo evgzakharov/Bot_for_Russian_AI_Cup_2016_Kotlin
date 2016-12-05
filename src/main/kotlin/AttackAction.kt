@@ -12,7 +12,8 @@ class AttackAction : Action() {
             safeHelper.tryToSafeByShield(self)
 
         val pointToMove = mapWayFinder.getPreviousWaypoint(strategyManager.currentLaneType!!)
-        if (self.life < self.maxLife * Action.Companion.LOW_HP_FACTOR) {
+        if (self.life < self.maxLife * LOW_HP_FACTOR ||
+                (self.life < self.maxLife * LOW_HP_FACTOR_WITHOUT_FIREBOLL && !skillHelper.isHasFireboll() && game.isSkillsEnabled)) {
             if (self.getDistanceTo(MapHelper.friendBasePoint) < MIN_CLOSE_DISTANCE_TO_BASE) {
                 val nearestTarget = findHelper.getNearestTarget()
 
