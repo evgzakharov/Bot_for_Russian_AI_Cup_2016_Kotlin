@@ -25,10 +25,15 @@ class ShootHelper(private val self: Wizard, private val game: Game, private val 
                 else
                     missleRadius = game.fireballExplosionMinDamageRange
 
+                move.maxCastDistance = max(distance, self.radius + MIN_CAST_RANGE)
+
             } else if (canShootByFrostBolt(nearestTarget) && shootDistance) {
+
                 move.action = ActionType.FROST_BOLT
                 missleRadius = game.frostBoltRadius
+
             } else {
+
                 if (self.getDistanceTo(nearestTarget) <= game.staffRange)
                     move.action = ActionType.STAFF
                 else if (shootDistance)
