@@ -340,7 +340,7 @@ object MapHelper {
         attackLines.put(LaneType.BOTTOM, AttackLine(bottomFriendLine, bottomEnemyLine))
     }
 
-    val LINE_RESOLVING_POSITION = 250.0
+    val LINE_RESOLVING_POSITION = 450.0
     val LINE_RESOLVING_DISTANCE = 250.0
 
     val DEAD_TOWER_HP_FACTOR = 0.1
