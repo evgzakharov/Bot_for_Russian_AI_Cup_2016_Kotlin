@@ -373,7 +373,6 @@ class StrategyManager {
                 SkillType.HASTE
         )
 
-        //v39
         val skillesToLearnFire: List<SkillType> = listOf(
                 SkillType.STAFF_DAMAGE_BONUS_PASSIVE_1,
                 SkillType.STAFF_DAMAGE_BONUS_AURA_1,
