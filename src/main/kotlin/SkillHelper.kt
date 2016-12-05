@@ -7,6 +7,11 @@ class SkillHelper(private val game: Game, private val self: Wizard) {
                 && self.getSkills().contains(SkillType.FIREBALL)
     }
 
+    fun isHasFrostBall(): Boolean {
+        return self.getSkills().isNotEmpty()
+                && self.getSkills().contains(SkillType.FROST_BOLT)
+    }
+
     fun isFirebollActive(): Boolean {
         return self.getSkills().isNotEmpty()
                 && self.getSkills().contains(SkillType.FIREBALL)
