@@ -95,7 +95,7 @@ class StrategyManager {
 
         val selfSkils = self.getSkills().toList()
 
-        val skillsToLearn = skillesToLearnFire
+        val skillsToLearn = skillesToLearnFrostV3
                 .filter { selfSkils.isEmpty() || !selfSkils.contains(it) }
                 .first()
 
