@@ -12,21 +12,26 @@ class ShootHelper(private val self: Wizard, private val game: Game, private val 
 
         move.turn = angle
 
-        if (distance > self.castRange) return
+        val shootDistance = distance <= self.castRange
 
         if (abs(angle) < game.staffSector / 2.0) {
             var missleRadius: Double = 0.0
 
             if (canShootByFireboll(nearestTarget)) {
                 move.action = ActionType.FIREBALL
-                missleRadius = game.fireballExplosionMaxDamageRange
-            } else if (canShootByFrostBolt(nearestTarget)) {
+
+                if (isInRange(nearestTarget, game.fireballExplosionMaxDamageRange))
+                    missleRadius = game.fireballExplosionMaxDamageRange
+                else
+                    missleRadius = game.fireballExplosionMinDamageRange
+
+            } else if (canShootByFrostBolt(nearestTarget) && shootDistance) {
                 move.action = ActionType.FROST_BOLT
                 missleRadius = game.frostBoltRadius
             } else {
                 if (self.getDistanceTo(nearestTarget) <= game.staffRange)
                     move.action = ActionType.STAFF
-                else
+                else if (shootDistance)
                     move.action = ActionType.MAGIC_MISSILE
 
                 missleRadius = game.magicMissileRadius
@@ -40,7 +45,7 @@ class ShootHelper(private val self: Wizard, private val game: Game, private val 
     fun canShootByFireboll(nearestTarget: LivingUnit): Boolean {
         if (!skillHelper.isFirebollActive()) return false
 
-        if (self.castRange + game.fireballExplosionMaxDamageRange <= self.getDistanceTo(nearestTarget) - nearestTarget.radius) return false
+        if (self.castRange + game.fireballExplosionMinDamageRange <= self.getDistanceTo(nearestTarget) - nearestTarget.radius) return false
 
         return when (nearestTarget) {
             is Tree -> false
@@ -50,6 +55,8 @@ class ShootHelper(private val self: Wizard, private val game: Game, private val 
         }
     }
 
+    fun isInRange(nearestTarget: LivingUnit, range: Double): Boolean =
+            self.castRange + range <= self.getDistanceTo(nearestTarget) - nearestTarget.radius
 
     fun canShootByFrostBolt(nearestTarget: LivingUnit): Boolean {
         if (!skillHelper.isFrostBoltActive()) return false
