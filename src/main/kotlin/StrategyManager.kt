@@ -92,12 +92,24 @@ class StrategyManager {
         }
     }
 
+    var learningSkills: List<SkillType>? = null
+
     private fun checkSkills() {
         if (!game.isSkillsEnabled) return
 
+        if (world.tickIndex < MIN_START_CHANGE_TICK) return
+
+        if (learningSkills == null) {
+            learningSkills = when (currentLaneType) {
+                LaneType.TOP, LaneType.BOTTOM -> skillesToLearnFire
+                LaneType.MIDDLE -> skillesToLearnMagicMissle
+                null -> throw RuntimeException("omg")
+            }
+        }
+
         val selfSkils = self.getSkills().toList()
 
-        val skillsToLearn = skillesToLearnFrostV3
+        val skillsToLearn = learningSkills!!
                 .filter { selfSkils.isEmpty() || !selfSkils.contains(it) }
                 .first()
 
@@ -190,11 +202,8 @@ class StrategyManager {
         val defenceLine = mapLines
                 .filter { line ->
                     line.enemy == false &&
-                            ((line.deadFriendTowerCount == 2
-                                    && line.enemyWizardPositions.isNotEmpty()
-                                    && line.friendWizardPositions.size <= 2
-                                    && line.enemyWizardPositions.size > line.friendWizardPositions.size
-                                    && line.enemyPosition ?: Double.MAX_VALUE <= line.lineLength * LINE_MIN_DEFENCE_FACTOR))
+                            (line.deadFriendTowerCount >= 1
+                                    && line.enemyWizardPositions.isNotEmpty())
                 }
                 .minBy { line -> line.enemyWizardPositions.values.min() ?: line.lineLength }
                 ?.let { it.laneType }
@@ -209,24 +218,13 @@ class StrategyManager {
         if (world.tickIndex - lastLaneAttackChangeTick <= MIN_CHANGE_ATTACK_TICK_LIMIT)
             return null
 
-        if ((skillsHelper.isHasSomeAttackSpell() || !game.isSkillsEnabled) && world.tickIndex > MIN__ATTACK_TICK_LIMIT) {
-            val lineToAttack = attackLines
-                    .values
-                    .filter { it.enemy.deadEnemyTowerCount >= 1 }
-                    .sortedByDescending { it.enemy.friendWizardPositions.size }
-                    .map { it.enemy.laneType }
-                    .firstOrNull()
+        val lineWithoutFriendWizards = attackLines
+                .filter { it.key != LaneType.MIDDLE }
+                .mapValues { attackLine -> attackLine.value.friendWizards() }
+                .filter { it.value.isEmpty() }.keys
 
-            if (lineToAttack != null)
-                return lineToAttack
-        } else {
-            val lineWithoutFriendWizards = attackLines
-                    .mapValues { attackLine -> attackLine.value.friendWizards() }
-                    .filter { it.value.isEmpty() }.keys
-
-            if (lineWithoutFriendWizards.isNotEmpty() && attackLines[currentLaneType!!]!!.friendWizards().size > 1)
-                return lineWithoutFriendWizards.firstOrNull()
-        }
+        if (lineWithoutFriendWizards.isNotEmpty() && attackLines[currentLaneType!!]!!.friendWizards().size > 1)
+            return lineWithoutFriendWizards.firstOrNull()
 
         return null
     }
@@ -280,62 +278,6 @@ class StrategyManager {
 
         const val LINE_WIZARD_MIN_FACTOR: Double = 0.2
 
-        val skillesToLearnFrost: List<SkillType> = listOf(
-                SkillType.MAGICAL_DAMAGE_BONUS_PASSIVE_1,
-                SkillType.MAGICAL_DAMAGE_BONUS_AURA_1,
-                SkillType.MAGICAL_DAMAGE_BONUS_PASSIVE_2,
-                SkillType.MAGICAL_DAMAGE_BONUS_AURA_2,
-                SkillType.FROST_BOLT,
-                SkillType.STAFF_DAMAGE_BONUS_PASSIVE_1,
-                SkillType.STAFF_DAMAGE_BONUS_AURA_1,
-                SkillType.STAFF_DAMAGE_BONUS_PASSIVE_2,
-                SkillType.STAFF_DAMAGE_BONUS_AURA_2,
-                SkillType.FIREBALL,
-                SkillType.MAGICAL_DAMAGE_ABSORPTION_PASSIVE_1,
-                SkillType.MAGICAL_DAMAGE_ABSORPTION_AURA_1,
-                SkillType.MAGICAL_DAMAGE_ABSORPTION_PASSIVE_2,
-                SkillType.MAGICAL_DAMAGE_ABSORPTION_AURA_2,
-                SkillType.SHIELD,
-                SkillType.MOVEMENT_BONUS_FACTOR_PASSIVE_1,
-                SkillType.MOVEMENT_BONUS_FACTOR_AURA_1,
-                SkillType.MOVEMENT_BONUS_FACTOR_PASSIVE_2,
-                SkillType.MOVEMENT_BONUS_FACTOR_AURA_2,
-                SkillType.RANGE_BONUS_PASSIVE_1,
-                SkillType.RANGE_BONUS_AURA_1,
-                SkillType.RANGE_BONUS_PASSIVE_2,
-                SkillType.RANGE_BONUS_AURA_2,
-                SkillType.ADVANCED_MAGIC_MISSILE,
-                SkillType.HASTE
-        )
-
-        val skillesToLearnFrostV2: List<SkillType> = listOf(
-                SkillType.MAGICAL_DAMAGE_BONUS_PASSIVE_1,
-                SkillType.MAGICAL_DAMAGE_BONUS_AURA_1,
-                SkillType.MAGICAL_DAMAGE_BONUS_PASSIVE_2,
-                SkillType.MAGICAL_DAMAGE_BONUS_AURA_2,
-                SkillType.FROST_BOLT,
-                SkillType.MAGICAL_DAMAGE_ABSORPTION_PASSIVE_1,
-                SkillType.MAGICAL_DAMAGE_ABSORPTION_AURA_1,
-                SkillType.MAGICAL_DAMAGE_ABSORPTION_PASSIVE_2,
-                SkillType.MAGICAL_DAMAGE_ABSORPTION_AURA_2,
-                SkillType.SHIELD,
-                SkillType.RANGE_BONUS_PASSIVE_1,
-                SkillType.RANGE_BONUS_AURA_1,
-                SkillType.RANGE_BONUS_PASSIVE_2,
-                SkillType.RANGE_BONUS_AURA_2,
-                SkillType.ADVANCED_MAGIC_MISSILE,
-                SkillType.STAFF_DAMAGE_BONUS_PASSIVE_1,
-                SkillType.STAFF_DAMAGE_BONUS_AURA_1,
-                SkillType.STAFF_DAMAGE_BONUS_PASSIVE_2,
-                SkillType.STAFF_DAMAGE_BONUS_AURA_2,
-                SkillType.FIREBALL,
-                SkillType.MOVEMENT_BONUS_FACTOR_PASSIVE_1,
-                SkillType.MOVEMENT_BONUS_FACTOR_AURA_1,
-                SkillType.MOVEMENT_BONUS_FACTOR_PASSIVE_2,
-                SkillType.MOVEMENT_BONUS_FACTOR_AURA_2,
-                SkillType.HASTE
-        )
-
         val skillesToLearnFrostV3: List<SkillType> = listOf(
                 SkillType.MAGICAL_DAMAGE_BONUS_PASSIVE_1,
                 SkillType.MAGICAL_DAMAGE_BONUS_AURA_1,
@@ -370,6 +312,11 @@ class StrategyManager {
                 SkillType.STAFF_DAMAGE_BONUS_PASSIVE_2,
                 SkillType.STAFF_DAMAGE_BONUS_AURA_2,
                 SkillType.FIREBALL,
+                SkillType.RANGE_BONUS_PASSIVE_1,
+                SkillType.RANGE_BONUS_AURA_1,
+                SkillType.RANGE_BONUS_PASSIVE_2,
+                SkillType.RANGE_BONUS_AURA_2,
+                SkillType.ADVANCED_MAGIC_MISSILE,
                 SkillType.MAGICAL_DAMAGE_BONUS_PASSIVE_1,
                 SkillType.MAGICAL_DAMAGE_BONUS_AURA_1,
                 SkillType.MAGICAL_DAMAGE_BONUS_PASSIVE_2,
@@ -384,11 +331,6 @@ class StrategyManager {
                 SkillType.MOVEMENT_BONUS_FACTOR_AURA_1,
                 SkillType.MOVEMENT_BONUS_FACTOR_PASSIVE_2,
                 SkillType.MOVEMENT_BONUS_FACTOR_AURA_2,
-                SkillType.RANGE_BONUS_PASSIVE_1,
-                SkillType.RANGE_BONUS_AURA_1,
-                SkillType.RANGE_BONUS_PASSIVE_2,
-                SkillType.RANGE_BONUS_AURA_2,
-                SkillType.ADVANCED_MAGIC_MISSILE,
                 SkillType.HASTE
         )
 
