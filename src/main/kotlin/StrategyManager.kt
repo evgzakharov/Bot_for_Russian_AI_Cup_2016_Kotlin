@@ -223,7 +223,7 @@ class StrategyManager {
                 .mapValues { attackLine -> attackLine.value.friendWizards() }
                 .filter { it.value.isEmpty() }.keys
 
-        if (lineWithoutFriendWizards.isNotEmpty() && attackLines[currentLaneType!!]!!.friendWizards().size > 1)
+        if (lineWithoutFriendWizards.isNotEmpty() && attackLines[currentLaneType!!]!!.friend.friendWizardPositions.size > 1)
             return lineWithoutFriendWizards.firstOrNull()
 
         return null
