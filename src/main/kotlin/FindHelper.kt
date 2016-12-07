@@ -187,8 +187,12 @@ class FindHelper(private val world: World, private val game: Game, private val w
             }
         }
 
-        return nearestTargets
-                .minBy { it.life }
+        if (nearestTargets.isNotEmpty() && nearestTargets[0] is Wizard)
+            return nearestTargets
+                    .minBy { it.life }
+        else
+            return nearestTargets
+                    .minBy { it.getDistanceTo(wizard) }
     }
 
     companion object {

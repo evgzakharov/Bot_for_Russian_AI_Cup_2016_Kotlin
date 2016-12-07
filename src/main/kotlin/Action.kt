@@ -118,19 +118,25 @@ abstract class Action {
         val rangeFactor = if (hpIsVeryLow || hpIsLowAndNotHaveSpell) LOW_HP_RANGE_FACTOR
         else 1.0
 
-        val enemyWithSmallestHP = enemyWizards
-                .filter { unit -> self.getDistanceTo(unit) <= unit.castRange * rangeFactor }
-                .minBy { it.life }
+        val nearestEnemy = enemyWizards
+                .map { unit -> unit to self.getDistanceTo(unit) }
+                .filter { it.second <= it.first.castRange * rangeFactor }
+                .minBy { it.second }
 
         var singleEnemyCondition = false
-        if (enemyWithSmallestHP != null) {
-            val enemyIsToClose = enemyWithSmallestHP.getDistanceTo(self) <= enemyWithSmallestHP.castRange * SINGLE_ENEMY_CLOSE_RANGE_FACTOR
+        if (nearestEnemy != null) {
+            val (enemy, rangeToEnemy) = nearestEnemy
+
+            val enemyMayShoot = enemy.castRange -
+                    enemy.remainingActionCooldownTicks * game.wizardBackwardSpeed * MIN_SHOOT_CLOSE_FACTOR >= rangeToEnemy
+
+            val enemyIsToClose = enemy.getDistanceTo(self) <= enemy.castRange * SINGLE_ENEMY_CLOSE_RANGE_FACTOR
 
             val hpIsToLow = self.life < SINGLE_ENEMY_LOG_HP_FACTOR * self.maxLife
-                    && self.life * SINGLE_ENEMY_LOG_HP_ENEMY_FACTOR < enemyWithSmallestHP.life
-                    && enemyWithSmallestHP.getAngleTo(self) <= game.staffSector * SINGLE_ENEMY_STAFF_FACTOR
+                    && self.life * SINGLE_ENEMY_LOG_HP_ENEMY_FACTOR < enemy.life
+                    && enemy.getAngleTo(self) <= game.staffSector * SINGLE_ENEMY_STAFF_FACTOR
 
-            if (enemyIsToClose || hpIsToLow || hpIsVeryLow || hpIsLowAndNotHaveSpell)
+            if (enemyIsToClose || hpIsToLow || hpIsVeryLow || hpIsLowAndNotHaveSpell || enemyMayShoot)
                 singleEnemyCondition = true
         }
         return singleEnemyCondition
@@ -210,6 +216,8 @@ abstract class Action {
         val SINGLE_LOW_HP_WITHOUT_SPELL: Double = 0.6
 
         val LOW_HP_RANGE_FACTOR: Double = 1.25
+
+        val MIN_SHOOT_CLOSE_FACTOR: Double = 1.01
 
     }
 }
