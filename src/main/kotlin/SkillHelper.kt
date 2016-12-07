@@ -12,8 +12,13 @@ class SkillHelper(private val game: Game, private val self: Wizard) {
                 && self.getSkills().contains(SkillType.FROST_BOLT)
     }
 
+    fun hasAdvancedMagicMissile(): Boolean {
+        return self.getSkills().isNotEmpty()
+                && self.getSkills().contains(SkillType.ADVANCED_MAGIC_MISSILE)
+    }
+
     fun isHasSomeAttackSpell(): Boolean {
-        return hasFireboll() || hasFrostboll()
+        return hasFireboll() || hasFrostboll() || hasAdvancedMagicMissile()
     }
 
     fun isFirebollActive(): Boolean {

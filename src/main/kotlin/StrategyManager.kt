@@ -102,7 +102,7 @@ class StrategyManager {
         if (learningSkills == null) {
             learningSkills = when (currentLaneType) {
                 LaneType.TOP, LaneType.BOTTOM -> skillesToLearnFire
-                LaneType.MIDDLE -> skillesToLearnMagicMissle
+                LaneType.MIDDLE -> skillesToLearnFire
                 null -> throw RuntimeException("omg")
             }
         }
@@ -203,7 +203,8 @@ class StrategyManager {
                 .filter { line ->
                     line.enemy == false &&
                             (line.deadFriendTowerCount >= 1
-                                    && line.enemyWizardPositions.isNotEmpty())
+                                    && line.enemyWizardPositions.isNotEmpty()
+                                    && line.enemyPosition ?: Double.MAX_VALUE <= line.lineLength * LINE_MIN_DEFENCE_FACTOR)
                 }
                 .minBy { line -> line.enemyWizardPositions.values.min() ?: line.lineLength }
                 ?.let { it.laneType }
@@ -223,7 +224,7 @@ class StrategyManager {
                 .mapValues { attackLine -> attackLine.value.friendWizards() }
                 .filter { it.value.isEmpty() }.keys
 
-        if (lineWithoutFriendWizards.isNotEmpty() && attackLines[currentLaneType!!]!!.friend.friendWizardPositions.size > 1)
+        if (lineWithoutFriendWizards.isNotEmpty() && attackLines[currentLaneType!!]!!.friendWizards().size > 1)
             return lineWithoutFriendWizards.firstOrNull()
 
         return null
@@ -312,16 +313,16 @@ class StrategyManager {
                 SkillType.STAFF_DAMAGE_BONUS_PASSIVE_2,
                 SkillType.STAFF_DAMAGE_BONUS_AURA_2,
                 SkillType.FIREBALL,
-                SkillType.RANGE_BONUS_PASSIVE_1,
-                SkillType.RANGE_BONUS_AURA_1,
-                SkillType.RANGE_BONUS_PASSIVE_2,
-                SkillType.RANGE_BONUS_AURA_2,
-                SkillType.ADVANCED_MAGIC_MISSILE,
                 SkillType.MAGICAL_DAMAGE_BONUS_PASSIVE_1,
                 SkillType.MAGICAL_DAMAGE_BONUS_AURA_1,
                 SkillType.MAGICAL_DAMAGE_BONUS_PASSIVE_2,
                 SkillType.MAGICAL_DAMAGE_BONUS_AURA_2,
                 SkillType.FROST_BOLT,
+                SkillType.RANGE_BONUS_PASSIVE_1,
+                SkillType.RANGE_BONUS_AURA_1,
+                SkillType.RANGE_BONUS_PASSIVE_2,
+                SkillType.RANGE_BONUS_AURA_2,
+                SkillType.ADVANCED_MAGIC_MISSILE,
                 SkillType.MAGICAL_DAMAGE_ABSORPTION_PASSIVE_1,
                 SkillType.MAGICAL_DAMAGE_ABSORPTION_AURA_1,
                 SkillType.MAGICAL_DAMAGE_ABSORPTION_PASSIVE_2,

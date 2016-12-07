@@ -182,7 +182,7 @@ class FindHelper(private val world: World, private val game: Game, private val w
             val distance = wizard.getDistanceTo(target)
 
             if (distance <= wizard.castRange ||
-                    (target is Wizard && skillHelper.isFirebollActive() && distance - target.radius <= wizard.castRange + game.fireballExplosionMaxDamageRange)) {
+                    (target is Wizard && skillHelper.isFirebollActive() && distance - target.radius <= wizard.castRange + game.fireballExplosionMaxDamageRange * 2)) {
                 nearestTargets.add(target)
             }
         }
