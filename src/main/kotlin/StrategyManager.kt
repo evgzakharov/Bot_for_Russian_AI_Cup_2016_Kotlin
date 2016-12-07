@@ -101,8 +101,8 @@ class StrategyManager {
 
         if (learningSkills == null) {
             learningSkills = when (currentLaneType) {
-                LaneType.TOP, LaneType.BOTTOM -> skillesToLearnFire
-                LaneType.MIDDLE -> skillesToLearnFire
+                LaneType.TOP, LaneType.BOTTOM -> skillesToLearnFrostV3
+                LaneType.MIDDLE -> skillesToLearnFrostV3
                 null -> throw RuntimeException("omg")
             }
         }
