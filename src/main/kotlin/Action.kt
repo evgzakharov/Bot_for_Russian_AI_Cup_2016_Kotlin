@@ -128,7 +128,9 @@ abstract class Action {
             val (enemy, rangeToEnemy) = nearestEnemy
 
             val enemyMayShoot = enemy.castRange -
-                    enemy.remainingActionCooldownTicks * game.wizardBackwardSpeed * MIN_SHOOT_CLOSE_FACTOR >= rangeToEnemy
+                    enemy.remainingActionCooldownTicks * game.wizardBackwardSpeed + MIN_SHOOT_CLOSE_FACTOR >= rangeToEnemy
+
+            val enemyLookAtMe = abs(enemy.getAngleTo(self)) <= PI / 4
 
             val enemyIsToClose = enemy.getDistanceTo(self) <= enemy.castRange * SINGLE_ENEMY_CLOSE_RANGE_FACTOR
 
@@ -136,7 +138,7 @@ abstract class Action {
                     && self.life * SINGLE_ENEMY_LOG_HP_ENEMY_FACTOR < enemy.life
                     && enemy.getAngleTo(self) <= game.staffSector * SINGLE_ENEMY_STAFF_FACTOR
 
-            if (enemyIsToClose || hpIsToLow || hpIsVeryLow || hpIsLowAndNotHaveSpell || enemyMayShoot)
+            if (enemyIsToClose || hpIsToLow || hpIsVeryLow || hpIsLowAndNotHaveSpell || (enemyMayShoot && enemyLookAtMe))
                 singleEnemyCondition = true
         }
         return singleEnemyCondition
@@ -217,7 +219,7 @@ abstract class Action {
 
         val LOW_HP_RANGE_FACTOR: Double = 1.25
 
-        val MIN_SHOOT_CLOSE_FACTOR: Double = 1.01
+        val MIN_SHOOT_CLOSE_FACTOR: Double = 3.0
 
     }
 }
