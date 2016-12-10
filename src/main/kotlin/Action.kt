@@ -219,7 +219,7 @@ abstract class Action {
 
         val LOW_HP_RANGE_FACTOR: Double = 1.25
 
-        val MIN_SHOOT_CLOSE_FACTOR: Double = 3.0
+        val MIN_SHOOT_CLOSE_FACTOR: Double = 10.0
 
     }
 }
