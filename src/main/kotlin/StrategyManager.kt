@@ -79,10 +79,6 @@ class StrategyManager {
         val middleLine = MapHelper.attackLines[LaneType.MIDDLE]!!
 
         if ((middleLine.enemy.enemyWizardPositions.values + middleLine.friend.enemyWizardPositions.values).size >= 3) {
-            val isSelfOnMiddle = MapHelper.getLinePositions(wizard, 1.0).find {
-                it.mapLine.laneType == LaneType.MIDDLE
-            }
-
             val middleIndex = listOf(2, 7, 3, 8, 5, 10)
 
             if (middleIndex.contains(wizard.id.toInt())) {
@@ -277,7 +273,7 @@ class StrategyManager {
 
         if (ifWizardOnAttackLine()) return currentLaneType
 
-        val laneToChoose = wizard.getMessages()?.firstOrNull()?.lane
+        val laneToChoose = wizard.getMessages().firstOrNull()?.lane
         if (laneToChoose != null)
             return laneToChoose
 
@@ -296,12 +292,6 @@ class StrategyManager {
         return this.friend.historyFriendWizardPositions.toData()
                 .filter { it.value >= this@friendWizards.friend.lineLength * LINE_WIZARD_MIN_FACTOR }
                 .keys + this.enemy.historyFriendWizardPositions.toData().keys
-    }
-
-    private fun List<MapLine>.shouldChangeLine(sortByEnemyTowers: Boolean = true, criteria: (MapLine) -> Boolean): LaneType? {
-        return this.filter { criteria(it) }
-                .sortedByDescending { if (sortByEnemyTowers) it.deadEnemyTowerCount else it.deadFriendTowerCount }
-                .firstOrNull()?.laneType
     }
 
     private fun initializeDefault() {

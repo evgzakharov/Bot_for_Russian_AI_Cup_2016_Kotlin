@@ -53,8 +53,8 @@ abstract class Action {
 
         val enemyWizards = findHelper.getAllWizards(true, true)
 
-        val multiEnemiesCondition = multiEnemiesCondition(enemyWizards)
-        if (multiEnemiesCondition) return true
+//        val multiEnemiesCondition = multiEnemiesCondition(enemyWizards)
+//        if (multiEnemiesCondition) return true
 
         val singleEnemyCondition = singleEnemyCondition(enemyWizards)
         if (singleEnemyCondition) return true
