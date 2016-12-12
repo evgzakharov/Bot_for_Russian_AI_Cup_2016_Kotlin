@@ -3,6 +3,7 @@ import MapHelper.friendBasePoint
 import MapHelper.mapLines
 import MapHelper.wizard
 import model.*
+import sun.misc.resources.Messages_es
 import java.lang.StrictMath.abs
 
 data class BonusTimeCatch(var lastCatchTick: Int = 0)
@@ -56,6 +57,8 @@ class StrategyManager {
 
     private fun makeDecision() {
         try {
+            masterDecision()
+
             checkSkills()
 
             updateBonusInfo()
@@ -67,6 +70,27 @@ class StrategyManager {
             action()
         } catch (e: Throwable) {
             moveHelper.goTo(friendBasePoint)
+        }
+    }
+
+    private fun masterDecision() {
+        if (wizard.isMaster) {
+            val middleLine = MapHelper.attackLines[LaneType.MIDDLE]!!
+
+            if ((middleLine.enemy.enemyWizardPositions.values + middleLine.friend.enemyWizardPositions.values).size >= 3) {
+                val wizardsOnMiddle = listOf(2, 5)
+
+                (1..5).map { index ->
+                    if (wizardsOnMiddle.contains(index))
+                        Message(lane = LaneType.MIDDLE, skillToLearn = SkillType.FROST_BOLT, rawMessage = byteArrayOf())
+                    else if (index == 1)
+                        Message(lane = LaneType.TOP, skillToLearn = SkillType.ADVANCED_MAGIC_MISSILE, rawMessage = byteArrayOf())
+                    else if (index == 4)
+                        Message(lane = LaneType.BOTTOM, skillToLearn = SkillType.ADVANCED_MAGIC_MISSILE, rawMessage = byteArrayOf())
+                    else
+                        Message(lane = LaneType.MIDDLE, skillToLearn = SkillType.FROST_BOLT, rawMessage = byteArrayOf())
+                }.apply { move.setMessages(this.toTypedArray()) }
+            }
         }
     }
 
@@ -237,7 +261,7 @@ class StrategyManager {
 
         if (ifWizardOnAttackLine()) return currentLaneType
 
-        val laneToChoose = wizard.getMessages().lastOrNull()?.lane
+        val laneToChoose = wizard.getMessages()?.lastOrNull()?.lane
         if (laneToChoose != null)
             return laneToChoose
 
