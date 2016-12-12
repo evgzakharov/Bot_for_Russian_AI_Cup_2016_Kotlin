@@ -100,10 +100,13 @@ class StrategyManager {
         if (world.tickIndex < MIN_START_CHANGE_TICK) return
 
         if (learningSkills == null) {
-            learningSkills = when (currentLaneType) {
-                LaneType.TOP, LaneType.BOTTOM -> skillesToLearnMagicMissle
-                LaneType.MIDDLE -> skillesToLearnMagicMissle
-                null -> throw RuntimeException("omg")
+            learningSkills = when (wizard.id.toInt()) {
+                1, 6 -> skillesToLearnFire
+                2, 7 -> skillesToLearnFrostV3
+                3, 8 -> skillesToLearnMagicMissle
+                4, 9 -> skillesToLearnFire
+                5, 10 -> skillesToLearnFrostV3
+                else -> throw RuntimeException()
             }
         }
 
@@ -199,17 +202,29 @@ class StrategyManager {
     }
 
     private fun laneDefenceDecision(): LaneType? {
+        if (ifWizardOnAttackLine()) return currentLaneType
+
         val defenceLine = mapLines
                 .filter { line ->
                     line.enemy == false &&
-                            (line.deadFriendTowerCount >= 1
+                            ((line.deadFriendTowerCount >= 1
                                     && line.enemyWizardPositions.isNotEmpty()
-                                    && line.enemyPosition ?: Double.MAX_VALUE <= line.lineLength * LINE_MIN_DEFENCE_FACTOR)
+                                    && line.enemyPosition ?: Double.MAX_VALUE <= line.lineLength * LINE_MIN_DEFENCE_FACTOR) ||
+                                    (line.deadFriendTowerCount == 2 &&
+                                            line.enemyPosition ?: Double.MAX_VALUE <= line.lineLength * LINE_MIN_DEFENCE_FACTOR))
                 }
                 .minBy { line -> line.enemyWizardPositions.values.min() ?: line.lineLength }
                 ?.let { it.laneType }
 
         return defenceLine
+    }
+
+    private fun ifWizardOnAttackLine(): Boolean {
+        val wizardLine = MapHelper.getLinePositions(wizard, 1.0)
+                .find { it.mapLine.enemy == true && it.position > it.mapLine.lineLength * LINE_NOT_DEFEND_POSITION }
+
+        if (wizardLine != null) return true
+        return false
     }
 
     private fun laneAttackDecision(): LaneType? {
@@ -218,6 +233,8 @@ class StrategyManager {
 
         if (world.tickIndex - lastLaneAttackChangeTick <= MIN_CHANGE_ATTACK_TICK_LIMIT)
             return null
+
+        if (ifWizardOnAttackLine()) return currentLaneType
 
         val lineWithoutFriendWizards = attackLines
                 .filter { it.key != LaneType.MIDDLE }
@@ -278,6 +295,8 @@ class StrategyManager {
         const val LINE_MIN_DEFENCE_FACTOR: Double = 0.3
 
         const val LINE_WIZARD_MIN_FACTOR: Double = 0.2
+
+        const val LINE_NOT_DEFEND_POSITION: Double = 0.6
 
         val skillesToLearnFrostV3: List<SkillType> = listOf(
                 SkillType.MAGICAL_DAMAGE_BONUS_PASSIVE_1,
