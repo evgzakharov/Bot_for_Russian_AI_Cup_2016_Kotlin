@@ -11,6 +11,7 @@ enum class GlobalStrateg {
     DEFENCE, ATTACK
 }
 
+//v63
 class StrategyManager {
     lateinit var self: Wizard
     lateinit var world: World
