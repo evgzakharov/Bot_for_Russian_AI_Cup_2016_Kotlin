@@ -79,15 +79,30 @@ class StrategyManager {
         val middleLine = MapHelper.attackLines[LaneType.MIDDLE]!!
 
         if ((middleLine.enemy.enemyWizardPositions.values + middleLine.friend.enemyWizardPositions.values).size >= 3) {
-            val wizardsOnMiddle = listOf(2, 5)
+            val isSelfOnMiddle = MapHelper.getLinePositions(wizard, 1.0).find {
+                it.mapLine.laneType == LaneType.MIDDLE
+            }
 
-            (1..5).map { index ->
+            val middleIndex = listOf(2, 7, 3, 8, 5, 10)
+
+            if (middleIndex.contains(wizard.id.toInt())) {
+                currentLaneType = LaneType.MIDDLE
+            }
+
+            val fractionWizards = findHelper.getAllWizards(onlyEnemy = false, onlyNearest = false)
+                    .filter { it.faction == wizard.faction }
+                    .map { it.id.toInt() }
+
+            (1..10).mapNotNull { index ->
+                if (index == wizard.id.toInt()) return@mapNotNull null
+
+                if (!fractionWizards.contains(index)) return@mapNotNull null
                 //why not nullable types???
-                if (wizardsOnMiddle.contains(index))
+                if (middleIndex.contains(index))
                     Message(lane = LaneType.MIDDLE, skillToLearn = SkillType.FROST_BOLT, rawMessage = byteArrayOf())
-                else if (index == 1)
+                else if (index == 1 || index == 6)
                     Message(lane = LaneType.TOP, skillToLearn = SkillType.ADVANCED_MAGIC_MISSILE, rawMessage = byteArrayOf())
-                else if (index == 4)
+                else if (index == 4 || index == 9)
                     Message(lane = LaneType.BOTTOM, skillToLearn = SkillType.ADVANCED_MAGIC_MISSILE, rawMessage = byteArrayOf())
                 else
                     Message(lane = LaneType.MIDDLE, skillToLearn = SkillType.FROST_BOLT, rawMessage = byteArrayOf())
@@ -262,7 +277,7 @@ class StrategyManager {
 
         if (ifWizardOnAttackLine()) return currentLaneType
 
-        val laneToChoose = wizard.getMessages()?.lastOrNull()?.lane
+        val laneToChoose = wizard.getMessages()?.firstOrNull()?.lane
         if (laneToChoose != null)
             return laneToChoose
 
