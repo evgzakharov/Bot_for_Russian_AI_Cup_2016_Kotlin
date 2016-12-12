@@ -101,10 +101,10 @@ class StrategyManager {
 
         if (learningSkills == null) {
             learningSkills = when (wizard.id.toInt()) {
-                1, 6 -> skillesToLearnFire
+                1, 6 -> skillesToLearnMagicMissle
                 2, 7 -> skillesToLearnFrostV3
                 3, 8 -> skillesToLearnMagicMissle
-                4, 9 -> skillesToLearnFire
+                4, 9 -> skillesToLearnMagicMissle
                 5, 10 -> skillesToLearnFrostV3
                 else -> throw RuntimeException()
             }
