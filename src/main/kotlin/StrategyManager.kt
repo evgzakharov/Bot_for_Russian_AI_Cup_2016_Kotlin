@@ -317,7 +317,7 @@ class StrategyManager {
         const val MIN_START_CHANGE_TICK: Int = 500
 
         const val MIN_CHANGE_DEFENCE_TICK_LIMIT: Int = 500
-        const val MIN_CHANGE_ATTACK_TICK_LIMIT: Int = 1000
+        const val MIN_CHANGE_ATTACK_TICK_LIMIT: Int = 3500
         const val MIN__ATTACK_TICK_LIMIT: Int = 3500
 
         const val LINE_POSITION_MULTIPLIER: Double = 0.2
