@@ -74,23 +74,24 @@ class StrategyManager {
     }
 
     private fun masterDecision() {
-        if (wizard.isMaster) {
-            val middleLine = MapHelper.attackLines[LaneType.MIDDLE]!!
+        if (!wizard.isMaster) return
 
-            if ((middleLine.enemy.enemyWizardPositions.values + middleLine.friend.enemyWizardPositions.values).size >= 3) {
-                val wizardsOnMiddle = listOf(2, 5)
+        val middleLine = MapHelper.attackLines[LaneType.MIDDLE]!!
 
-                (1..5).map { index ->
-                    if (wizardsOnMiddle.contains(index))
-                        Message(lane = LaneType.MIDDLE, skillToLearn = SkillType.FROST_BOLT, rawMessage = byteArrayOf())
-                    else if (index == 1)
-                        Message(lane = LaneType.TOP, skillToLearn = SkillType.ADVANCED_MAGIC_MISSILE, rawMessage = byteArrayOf())
-                    else if (index == 4)
-                        Message(lane = LaneType.BOTTOM, skillToLearn = SkillType.ADVANCED_MAGIC_MISSILE, rawMessage = byteArrayOf())
-                    else
-                        Message(lane = LaneType.MIDDLE, skillToLearn = SkillType.FROST_BOLT, rawMessage = byteArrayOf())
-                }.apply { move.setMessages(this.toTypedArray()) }
-            }
+        if ((middleLine.enemy.enemyWizardPositions.values + middleLine.friend.enemyWizardPositions.values).size >= 3) {
+            val wizardsOnMiddle = listOf(2, 5)
+
+            (1..5).map { index ->
+                //why not nullable types???
+                if (wizardsOnMiddle.contains(index))
+                    Message(lane = LaneType.MIDDLE, skillToLearn = SkillType.FROST_BOLT, rawMessage = byteArrayOf())
+                else if (index == 1)
+                    Message(lane = LaneType.TOP, skillToLearn = SkillType.ADVANCED_MAGIC_MISSILE, rawMessage = byteArrayOf())
+                else if (index == 4)
+                    Message(lane = LaneType.BOTTOM, skillToLearn = SkillType.ADVANCED_MAGIC_MISSILE, rawMessage = byteArrayOf())
+                else
+                    Message(lane = LaneType.MIDDLE, skillToLearn = SkillType.FROST_BOLT, rawMessage = byteArrayOf())
+            }.apply { move.setMessages(this.toTypedArray()) }
         }
     }
 
@@ -316,7 +317,7 @@ class StrategyManager {
         const val MIN_START_CHANGE_TICK: Int = 500
 
         const val MIN_CHANGE_DEFENCE_TICK_LIMIT: Int = 500
-        const val MIN_CHANGE_ATTACK_TICK_LIMIT: Int = 3500
+        const val MIN_CHANGE_ATTACK_TICK_LIMIT: Int = 1000
         const val MIN__ATTACK_TICK_LIMIT: Int = 3500
 
         const val LINE_POSITION_MULTIPLIER: Double = 0.2
