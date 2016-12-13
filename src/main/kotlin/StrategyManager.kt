@@ -278,7 +278,7 @@ class StrategyManager {
 
         if (ifWizardOnAttackLine()) return currentLaneType
 
-        val laneToChoose = wizard.getMessages().firstOrNull()?.lane
+        val laneToChoose = wizard.getMessages().lastOrNull()?.lane
         if (laneToChoose != null)
             return laneToChoose
 
