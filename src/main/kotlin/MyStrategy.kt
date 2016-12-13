@@ -3,7 +3,6 @@ import model.Move
 import model.Wizard
 import model.World
 
-//v15
 class MyStrategy : Strategy {
 
     private var strategyManager: StrategyManager? = null

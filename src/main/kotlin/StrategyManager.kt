@@ -78,8 +78,13 @@ class StrategyManager {
 
         val middleLine = MapHelper.attackLines[LaneType.MIDDLE]!!
 
-        if ((middleLine.enemy.enemyWizardPositions.values + middleLine.friend.enemyWizardPositions.values).size >= 3) {
-            val middleIndex = listOf(2, 7, 3, 8, 5, 10)
+        val enemiesOnMiddle = middleLine.enemy.enemyWizardPositions.values + middleLine.friend.enemyWizardPositions.values
+
+        if (enemiesOnMiddle.size >= 3) {
+            val middleIndex = if (enemiesOnMiddle.size != 5)
+                listOf(2, 7, 3, 8, 5, 10)
+            else
+                listOf(2, 7, 3, 8, 5, 10, 4, 9)
 
             if (middleIndex.contains(wizard.id.toInt())) {
                 currentLaneType = LaneType.MIDDLE
